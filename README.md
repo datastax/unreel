@@ -31,15 +31,18 @@ Both components should now be running locally and support live reloads.
 
 If this proves the concept and can work, the next steps are:
 
-- [ ] Get movie quotes in response to the start event from the admin panel.
-- [ ] Send quotes to all connected clients.
-- [ ] Display distinct quotes on each client in a team/room's device.
+- [ ] Get a movie quote in response to the start event from the admin panel.
+- [ ] Display the quote on the main display + on each connected client.
+- [ ] Display options for each member in a team. Options must be:
+  - [ ] 2 plausible but wrong answers.
+  - [ ] 1 correct answer.
+  - [ ] "AI Generated"
 - [ ] Recognize when only 1 client in a room has their phone facing upward within a time period.
 - [ ] Submit the answer when only 1 client in a room has their phone facing upward, or when the time runs out.
 - [ ] Update the score per room that finishes (`isCorrect * (timeRemaining + 1)`).
 - [ ] Display the scores for each room on a separate display (maybe a separate project, maybe another Astro app in this "monorepo").
 - [ ] Go to the next round (we have a total of 10 rounds).
-- [ ] After the last round, add a "Game Over" screen that shows the winner.
+- [ ] After the last round, add a "Game Over" screen that shows the winner and the scores.
 - [ ] Invite the teams to go network at the happy hour (via UI).
 
 ## Concerns
