@@ -10,6 +10,7 @@ export function InGame() {
   const [meIndex, setMeIndex] = useState<number>(0);
   const { teamId } = useParams();
   const navigate = useNavigate();
+  const [isRoundDecided, setIsRoundDecided] = useState(false);
 
   const { ws } = useParty();
 
@@ -31,6 +32,7 @@ export function InGame() {
           return;
         case "getQuote":
         case "nextQuote":
+          setIsRoundDecided(false);
           setCurrentQuote(data.quote);
           return;
         case "gameOver":
@@ -38,6 +40,9 @@ export function InGame() {
           return;
         case "resetGame":
           navigate(`/`);
+          return;
+        case "roundDecided":
+          setIsRoundDecided(true);
           return;
       }
     };
@@ -70,6 +75,19 @@ export function InGame() {
             },
             playerId: ws!.id,
           });
+        } else if (
+          (lastBeta >= 70 && currentBeta < 70) ||
+          (lastBeta <= 110 && currentBeta > 110)
+        ) {
+          undoOption({
+            ws,
+            teamId: teamId!,
+            option: {
+              value: currentQuote.options[meIndex],
+              status: "undecided",
+            },
+            playerId: ws!.id,
+          });
         }
 
         lastBeta = currentBeta;
@@ -86,6 +104,20 @@ export function InGame() {
   if (!teamId) {
     navigate("/");
     return null;
+  }
+
+  if (isRoundDecided) {
+    return (
+      <TeamRoomWrapper>
+        <div className="flex flex-col items-center justify-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
+          <p className="text-xl mb-2">Waiting for the next quote</p>
+          <p className="text-sm text-gray-400">
+            (waiting for all teams to finish)
+          </p>
+        </div>
+      </TeamRoomWrapper>
+    );
   }
 
   return (
@@ -127,6 +159,21 @@ export function InGame() {
             >
               Accept
             </button>
+            <button
+              onClick={() =>
+                undoOption({
+                  ws,
+                  teamId,
+                  option: {
+                    value: currentQuote.options[meIndex],
+                    status: "undecided",
+                  },
+                  playerId: ws!.id,
+                })
+              }
+            >
+              Undo
+            </button>
           </>
         )}
       </div>
@@ -162,4 +209,19 @@ const acceptOption = ({
 }) => {
   if (!ws) return;
   ws.send(JSON.stringify({ type: "acceptOption", teamId, option, playerId }));
+};
+
+const undoOption = ({
+  ws,
+  teamId,
+  playerId,
+  option,
+}: {
+  ws: PartySocket | null;
+  teamId: string;
+  playerId: string;
+  option: Option;
+}) => {
+  if (!ws) return;
+  ws.send(JSON.stringify({ type: "undoOption", teamId, playerId, option }));
 };

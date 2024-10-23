@@ -1,15 +1,15 @@
 import type * as Party from "partykit/server";
-import type { Quote, Team } from "../../common/types";
+import { type Quote, type Team } from "../../common/types";
 
 export default class Server implements Party.Server {
   constructor(readonly room: Party.Room) {}
 
   quotes: Quote[] = [];
   teams: Record<number, Team> = {
-    1: { score: 0, currentOptions: [], players: [] },
-    2: { score: 0, currentOptions: [], players: [] },
-    3: { score: 0, currentOptions: [], players: [] },
-    4: { score: 0, currentOptions: [], players: [] },
+    1: { score: 0, players: [] },
+    2: { score: 0, players: [] },
+    3: { score: 0, players: [] },
+    4: { score: 0, players: [] },
   };
   currentQuoteIndex: number = 0;
 
@@ -24,22 +24,24 @@ export default class Server implements Party.Server {
 
   onMessage = async (message: string, sender: Party.Connection) => {
     const data = JSON.parse(message);
+    console.log("Got event", data);
     switch (data.type) {
       case "getTeams":
         this.broadcastToSingleClient(
           JSON.stringify({ type: "teams", teams: this.teams }),
           sender.id
         );
-        break;
+        return;
       case "joinTeam":
         this.teams[data.teamId].players.push({
           id: sender.id,
           email: data.email,
+          choices: {},
         });
         this.room.broadcast(
           JSON.stringify({ type: "playerJoined", teams: this.teams })
         );
-        break;
+        return;
       case "leaveTeam":
         this.teams[data.teamId].players = this.teams[
           data.teamId
@@ -47,7 +49,7 @@ export default class Server implements Party.Server {
         this.room.broadcast(
           JSON.stringify({ type: "playerLeft", teams: this.teams })
         );
-        break;
+        return;
       case "startGame":
         this.quotes = await getQuotes();
         this.currentQuoteIndex = 0;
@@ -64,7 +66,7 @@ export default class Server implements Party.Server {
             currentQuoteIndex: this.currentQuoteIndex,
           })
         );
-        break;
+        return;
       case "getQuotes":
         this.broadcastToSingleClient(
           JSON.stringify({
@@ -74,26 +76,100 @@ export default class Server implements Party.Server {
           }),
           sender.id
         );
-        break;
+        return;
       case "rejectOption":
       case "acceptOption":
-        this.teams[data.teamId].currentOptions.push(data.option);
-
-        if (this.teams[data.teamId].currentOptions.length === 4) {
-          const acceptedOptions = this.teams[data.teamId].currentOptions.filter(
-            (option) => option.status === "accepted"
-          );
-          const rejectedOptions = this.teams[data.teamId].currentOptions.filter(
-            (option) => option.status === "rejected"
-          );
-
-          if (acceptedOptions.length === 1 && rejectedOptions.length === 3) {
-            this.room.broadcast(
-              JSON.stringify({ type: "roundDecided", team: data.teamId })
-            );
+      case "undoOption":
+        console.log(`Processing ${data.type} for team ${data.teamId}`);
+        const playerIndex = this.teams[data.teamId].players.findIndex(
+          (player) => {
+            return player.email === data.playerId;
           }
+        );
+
+        console.log(`Player index: ${playerIndex}`);
+        if (playerIndex === -1) {
+          console.log(`Player not found in team ${data.teamId}`);
+          return;
         }
-        break;
+
+        this.teams[data.teamId].players[playerIndex].choices[
+          this.currentQuoteIndex
+        ] = data.option;
+        console.log(`Updated player choice: ${JSON.stringify(data.option)}`);
+
+        this.room.broadcast(
+          JSON.stringify({
+            type: "options",
+            teams: this.teams,
+          })
+        );
+        console.log(`Broadcasted updated options for team ${data.teamId}`);
+
+        const team = this.teams[data.teamId];
+        const allDecided = team.players.every(
+          (player) =>
+            player.choices[this.currentQuoteIndex] &&
+            player.choices[this.currentQuoteIndex].status !== "undecided"
+        );
+        console.log(`All players decided: ${allDecided}`);
+
+        if (!allDecided) return;
+
+        const choices = team.players.map(
+          (player) => player.choices[this.currentQuoteIndex]
+        );
+        const acceptedCount = choices.filter(
+          (choice) => choice.status === "accepted"
+        ).length;
+        const rejectedCount = choices.filter(
+          (choice) => choice.status === "rejected"
+        ).length;
+        console.log(`Accepted: ${acceptedCount}, Rejected: ${rejectedCount}`);
+
+        if (acceptedCount !== 1 || rejectedCount !== choices.length - 1) {
+          console.log("Invalid choice distribution, returning");
+          return;
+        }
+
+        const correctOption =
+          this.quotes[this.currentQuoteIndex].options[
+            this.quotes[this.currentQuoteIndex].correctOptionIndex
+          ];
+        const acceptedChoice = choices.find(
+          (choice) => choice.status === "accepted"
+        );
+        console.log(
+          `Correct option: ${correctOption}, Accepted choice: ${acceptedChoice?.value}`
+        );
+
+        if (acceptedChoice && acceptedChoice.value === correctOption) {
+          team.score += 1;
+          console.log(`Team ${data.teamId} score increased to ${team.score}`);
+          this.room.broadcast(
+            JSON.stringify({
+              type: "updateTeamScore",
+              teams: this.teams,
+            })
+          );
+        }
+
+        if (this.currentQuoteIndex === this.quotes.length - 1) {
+          console.log("Game over, broadcasting gameOver event");
+          this.room.broadcast(JSON.stringify({ type: "gameOver" }));
+          return;
+        }
+
+        console.log(`Broadcasting roundDecided for team ${data.teamId}`);
+        this.room.broadcast(
+          JSON.stringify({
+            type: "roundDecided",
+            teamId: data.teamId,
+            score: team.score,
+          })
+        );
+        return;
+
       case "getQuote":
         this.broadcastToSingleClient(
           JSON.stringify({
@@ -102,13 +178,13 @@ export default class Server implements Party.Server {
           }),
           sender.id
         );
-        break;
+        return;
       case "nextQuote":
         this.sendNextQuote();
-        break;
+        return;
       case "resetGame":
         this.resetGame();
-        break;
+        return;
       default:
         console.log("Unknown message type", data.type);
     }
@@ -138,10 +214,10 @@ export default class Server implements Party.Server {
 
   resetGame = () => {
     this.teams = {
-      1: { score: 0, currentOptions: [], players: [] },
-      2: { score: 0, currentOptions: [], players: [] },
-      3: { score: 0, currentOptions: [], players: [] },
-      4: { score: 0, currentOptions: [], players: [] },
+      1: { score: 0, players: [] },
+      2: { score: 0, players: [] },
+      3: { score: 0, players: [] },
+      4: { score: 0, players: [] },
     };
     this.currentQuoteIndex = 0;
     this.quotes = [];

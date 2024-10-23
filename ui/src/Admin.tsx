@@ -33,6 +33,19 @@ export function Admin() {
         case "resetGame":
           window.location.reload();
           break;
+        case "updateTeamScore":
+          setTeams(() => data.teams);
+          break;
+        case "options":
+          setTeams(() => data.teams);
+          break;
+        case "roundDecided":
+          {
+            const updatedTeams = { ...teams };
+            updatedTeams[data.teamId].score = data.score;
+            setTeams(updatedTeams);
+          }
+          break;
       }
     };
   }, [ws]);
@@ -109,37 +122,48 @@ export function Admin() {
         <h2 className="text-xl font-semibold mb-2">Teams:</h2>
         {Object.entries(teams).map(([teamId, teamData]) => (
           <div key={teamId} className="mb-4">
-            <h3 className="font-medium mb-2">Team {teamId}</h3>
-            <table className="w-full border-collapse border border-gray-300">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 px-4 py-2">ID</th>
-                  <th className="border border-gray-300 px-4 py-2">Email</th>
-                  <th className="border border-gray-300 px-4 py-2">
-                    Current Option
-                  </th>
-                  <th className="border border-gray-300 px-4 py-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {teamData.players.map((player, index) => (
-                  <tr key={player.id}>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {player.id}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {player.email}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {teamData.currentOptions[index]?.value || "N/A"}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {teamData.currentOptions[index]?.status || "N/A"}
-                    </td>
+            <h3 className="font-medium mb-2">
+              Team {teamId} - Score: {teamData.score}
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-300 px-4 py-2">Player</th>
+                    {allQuotes.map((_, index) => (
+                      <th
+                        key={index}
+                        className="border border-gray-300 px-4 py-2"
+                      >
+                        Round {index + 1}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {teamData.players.map((player) => (
+                    <tr key={player.id}>
+                      <td className="border border-gray-300 px-4 py-2">
+                        {player.email}
+                      </td>
+                      {allQuotes.map((_, quoteIndex) => {
+                        const choice = player.choices[quoteIndex];
+                        return (
+                          <td
+                            key={`${teamId}-${player.id}-${quoteIndex}`}
+                            className="border border-gray-300 px-4 py-2"
+                          >
+                            {choice
+                              ? `${choice.value} (${choice.status})`
+                              : `N/A (undecided)`}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ))}
       </div>

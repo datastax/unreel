@@ -1,12 +1,11 @@
 export type Option = {
   value: string;
-  status: "accepted" | "rejected";
+  status: "accepted" | "rejected" | "undecided";
 };
 
 export type Team = {
   score: number;
-  currentOptions: Option[];
-  players: { id: string; email: string }[];
+  players: { id: string; email: string; choices: Record<string, Option> }[];
 };
 
 export type Quote = {
