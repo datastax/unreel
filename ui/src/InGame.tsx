@@ -105,11 +105,15 @@ export function InGame() {
   }, [ws, currentQuote]);
 
   useEffect(() => {
+    if (isRoundDecided) return;
+
     const timeout = setTimeout(() => {
-      ws?.send(JSON.stringify({ type: "forfeit", teamId }));
+      ws?.send(
+        JSON.stringify({ type: "forfeit", teamId, quote: currentQuote?.quote })
+      );
     }, forfeitTimeout);
     return () => clearTimeout(timeout);
-  }, [isRoundDecided]);
+  }, [isRoundDecided, currentQuote]);
 
   if (!teamId) {
     navigate("/");
@@ -132,7 +136,7 @@ export function InGame() {
 
   return (
     <TeamRoomWrapper>
-      <CountdownCircle timeout={forfeitTimeout} />
+      <CountdownCircle key={currentQuote?.quote} timeout={forfeitTimeout} />
       <div className="flex flex-col items-center justify-center">
         {currentQuote && (
           <>

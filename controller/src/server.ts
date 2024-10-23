@@ -169,7 +169,19 @@ export default class Server implements Party.Server {
           })
         );
         return;
-      case "forfeit":
+      case "forfeit": {
+        this.teams[data.teamId].players.forEach((player) => {
+          player.choices[this.currentQuoteIndex] = {
+            value: "Forfeited",
+            status: "undecided",
+          };
+        });
+        this.room.broadcast(
+          JSON.stringify({
+            type: "options",
+            teams: this.teams,
+          })
+        );
         this.room.broadcast(
           JSON.stringify({
             type: "roundDecided",
@@ -178,6 +190,7 @@ export default class Server implements Party.Server {
           })
         );
         return;
+      }
       case "getQuote":
         this.broadcastToSingleClient(
           JSON.stringify({
