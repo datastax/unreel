@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useParty } from "./PartyContext";
 import PartySocket from "partysocket";
@@ -14,6 +14,7 @@ export function InGame() {
   const { teamId } = useParams();
   const navigate = useNavigate();
   const [isRoundDecided, setIsRoundDecided] = useState(false);
+  const timeRemaining = useRef(forfeitTimeout);
 
   const { ws } = useParty();
 
@@ -67,6 +68,7 @@ export function InGame() {
               status: "rejected",
             },
             playerId: ws!.id,
+            timeRemaining: timeRemaining.current,
           });
         } else if (lastBeta > 110 && currentBeta <= 110) {
           acceptOption({
@@ -77,6 +79,7 @@ export function InGame() {
               status: "accepted",
             },
             playerId: ws!.id,
+            timeRemaining: timeRemaining.current,
           });
         } else if (
           (lastBeta >= 70 && currentBeta < 70) ||
@@ -90,6 +93,7 @@ export function InGame() {
               status: "undecided",
             },
             playerId: ws!.id,
+            timeRemaining: timeRemaining.current,
           });
         }
 
@@ -106,13 +110,22 @@ export function InGame() {
 
   useEffect(() => {
     if (isRoundDecided) return;
+    timeRemaining.current = forfeitTimeout;
+
+    const interval = setInterval(() => {
+      timeRemaining.current -= 1000;
+      console.log(timeRemaining.current);
+    }, 1000);
 
     const timeout = setTimeout(() => {
       ws?.send(
         JSON.stringify({ type: "forfeit", teamId, quote: currentQuote?.quote })
       );
     }, forfeitTimeout);
-    return () => clearTimeout(timeout);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
   }, [isRoundDecided, currentQuote]);
 
   if (!teamId) {
@@ -154,6 +167,7 @@ export function InGame() {
                     status: "rejected",
                   },
                   playerId: ws!.id,
+                  timeRemaining: timeRemaining.current,
                 })
               }
             >
@@ -169,6 +183,7 @@ export function InGame() {
                     status: "accepted",
                   },
                   playerId: ws!.id,
+                  timeRemaining: timeRemaining.current,
                 })
               }
             >
@@ -184,6 +199,7 @@ export function InGame() {
                     status: "undecided",
                   },
                   playerId: ws!.id,
+                  timeRemaining: timeRemaining.current,
                 })
               }
             >
@@ -201,14 +217,24 @@ const rejectOption = ({
   teamId,
   option,
   playerId,
+  timeRemaining,
 }: {
   ws: PartySocket | null;
   teamId: string;
   option: Option;
   playerId: string;
+  timeRemaining: number;
 }) => {
   if (!ws) return;
-  ws.send(JSON.stringify({ type: "rejectOption", teamId, option, playerId }));
+  ws.send(
+    JSON.stringify({
+      type: "rejectOption",
+      teamId,
+      option,
+      playerId,
+      timeRemaining,
+    })
+  );
 };
 
 const acceptOption = ({
@@ -216,14 +242,24 @@ const acceptOption = ({
   teamId,
   option,
   playerId,
+  timeRemaining,
 }: {
   ws: PartySocket | null;
   teamId: string;
   option: Option;
   playerId: string;
+  timeRemaining: number;
 }) => {
   if (!ws) return;
-  ws.send(JSON.stringify({ type: "acceptOption", teamId, option, playerId }));
+  ws.send(
+    JSON.stringify({
+      type: "acceptOption",
+      teamId,
+      option,
+      playerId,
+      timeRemaining,
+    })
+  );
 };
 
 const undoOption = ({
@@ -231,12 +267,22 @@ const undoOption = ({
   teamId,
   playerId,
   option,
+  timeRemaining,
 }: {
   ws: PartySocket | null;
   teamId: string;
   playerId: string;
   option: Option;
+  timeRemaining: number;
 }) => {
   if (!ws) return;
-  ws.send(JSON.stringify({ type: "undoOption", teamId, playerId, option }));
+  ws.send(
+    JSON.stringify({
+      type: "undoOption",
+      teamId,
+      playerId,
+      option,
+      timeRemaining,
+    })
+  );
 };

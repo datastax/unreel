@@ -24,7 +24,6 @@ export default class Server implements Party.Server {
 
   onMessage = async (message: string, sender: Party.Connection) => {
     const data = JSON.parse(message);
-    console.log("Got event", data);
     switch (data.type) {
       case "getTeams":
         this.broadcastToSingleClient(
@@ -80,23 +79,19 @@ export default class Server implements Party.Server {
       case "rejectOption":
       case "acceptOption":
       case "undoOption":
-        console.log(`Processing ${data.type} for team ${data.teamId}`);
         const playerIndex = this.teams[data.teamId].players.findIndex(
           (player) => {
             return player.email === data.playerId;
           }
         );
 
-        console.log(`Player index: ${playerIndex}`);
         if (playerIndex === -1) {
-          console.log(`Player not found in team ${data.teamId}`);
           return;
         }
 
         this.teams[data.teamId].players[playerIndex].choices[
           this.currentQuoteIndex
         ] = data.option;
-        console.log(`Updated player choice: ${JSON.stringify(data.option)}`);
 
         this.room.broadcast(
           JSON.stringify({
@@ -104,7 +99,6 @@ export default class Server implements Party.Server {
             teams: this.teams,
           })
         );
-        console.log(`Broadcasted updated options for team ${data.teamId}`);
 
         const team = this.teams[data.teamId];
         const allDecided = team.players.every(
@@ -112,7 +106,6 @@ export default class Server implements Party.Server {
             player.choices[this.currentQuoteIndex] &&
             player.choices[this.currentQuoteIndex].status !== "undecided"
         );
-        console.log(`All players decided: ${allDecided}`);
 
         if (!allDecided) return;
 
@@ -125,10 +118,8 @@ export default class Server implements Party.Server {
         const rejectedCount = choices.filter(
           (choice) => choice.status === "rejected"
         ).length;
-        console.log(`Accepted: ${acceptedCount}, Rejected: ${rejectedCount}`);
 
         if (acceptedCount !== 1 || rejectedCount !== choices.length - 1) {
-          console.log("Invalid choice distribution, returning");
           return;
         }
 
@@ -139,13 +130,10 @@ export default class Server implements Party.Server {
         const acceptedChoice = choices.find(
           (choice) => choice.status === "accepted"
         );
-        console.log(
-          `Correct option: ${correctOption}, Accepted choice: ${acceptedChoice?.value}`
-        );
 
         if (acceptedChoice && acceptedChoice.value === correctOption) {
-          team.score += 1;
-          console.log(`Team ${data.teamId} score increased to ${team.score}`);
+          console.log({ timeRemaining: data });
+          team.score += data.timeRemaining / 1000;
           this.room.broadcast(
             JSON.stringify({
               type: "updateTeamScore",
@@ -155,12 +143,10 @@ export default class Server implements Party.Server {
         }
 
         if (this.currentQuoteIndex === this.quotes.length - 1) {
-          console.log("Game over, broadcasting gameOver event");
           this.room.broadcast(JSON.stringify({ type: "gameOver" }));
           return;
         }
 
-        console.log(`Broadcasting roundDecided for team ${data.teamId}`);
         this.room.broadcast(
           JSON.stringify({
             type: "roundDecided",
