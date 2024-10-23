@@ -8,7 +8,7 @@ export const useParty = () => useContext(PartyContext);
 
 export const PartyProvider = ({ children }: { children: React.ReactNode }) => {
   const ws = usePartySocket({
-    host: "localhost:1999",
+    host: import.meta.env.VITE_PARTYKIT_HOST,
     room: "lobby",
   });
 
