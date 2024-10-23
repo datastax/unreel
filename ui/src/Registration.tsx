@@ -26,6 +26,7 @@ export function Registration() {
     if (isValid) {
       if (!ws) return;
       ws.updateProperties({ id: email });
+      ws.send(JSON.stringify({ type: "joinTeam", teamId, email }));
       navigate(`/team/${teamId}`);
     }
   };

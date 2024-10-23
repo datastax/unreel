@@ -1,3 +1,5 @@
+import { maxPlayersPerTeam } from "../../common/types";
+
 export function PlayerCount({ count }: { count: number }) {
   return (
     <span className="text-sm">
@@ -13,7 +15,7 @@ export function PlayerCount({ count }: { count: number }) {
           clipRule="evenodd"
         />
       </svg>
-      {count} / 2
+      {count} / {maxPlayersPerTeam}
     </span>
   );
 }

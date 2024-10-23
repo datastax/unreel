@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { PlayerCount } from "./PlayerCount";
-import { teamBgColors } from "./util/teamBgColors";
-import { InGame } from "./InGame";
 import { useParty } from "./PartyContext";
+import { maxPlayersPerTeam } from "../../common/types";
+import { TeamRoomWrapper } from "./TeamRoomWrapper";
 
 export function TeamRoom() {
   const [currentPlayerCount, setCurrentPlayerCount] = useState(0);
@@ -15,7 +15,6 @@ export function TeamRoom() {
   useEffect(() => {
     if (!ws) return;
     ws.send(JSON.stringify({ type: "getTeams" }));
-    ws.send(JSON.stringify({ type: "joinTeam", teamId, email: ws.id }));
 
     const handleBeforeUnload = () => {
       ws.send(JSON.stringify({ type: "leaveTeam", teamId }));
@@ -24,7 +23,6 @@ export function TeamRoom() {
     window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      ws.send(JSON.stringify({ type: "leaveTeam", teamId }));
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [ws, teamId]);
@@ -38,13 +36,16 @@ export function TeamRoom() {
         case "playerJoined":
         case "teams":
         case "playerLeft":
-          setCurrentPlayerCount(data.teams[teamId].length);
+          setCurrentPlayerCount(data.teams[teamId].players.length);
+          break;
+        case "gameStarted":
+          if (data.currentPlayerCounts[teamId] === maxPlayersPerTeam) {
+            navigate(`/game/${teamId}`);
+          }
           break;
       }
     };
   }, [ws, teamId]);
-
-  const isWaiting = currentPlayerCount < 2;
 
   if (!teamId) {
     navigate("/");
@@ -52,19 +53,13 @@ export function TeamRoom() {
   }
 
   return (
-    <div
-      className={`flex flex-col items-center justify-center h-screen bg-${teamBgColors[teamId]} text-white`}
-    >
+    <TeamRoomWrapper>
       <h1 className="text-3xl font-bold mb-8">Team {teamId}</h1>
-      {isWaiting ? (
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
-          <p className="text-xl">Waiting for players...</p>
-          <PlayerCount count={currentPlayerCount} />
-        </div>
-      ) : (
-        <InGame />
-      )}
-    </div>
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
+        <p className="text-xl">Waiting for players...</p>
+        <PlayerCount count={currentPlayerCount} />
+      </div>
+    </TeamRoomWrapper>
   );
 }
