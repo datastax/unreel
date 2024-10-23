@@ -4,6 +4,9 @@ import { useParty } from "./PartyContext";
 import PartySocket from "partysocket";
 import { Quote, Option } from "../../common/types";
 import { TeamRoomWrapper } from "./TeamRoomWrapper";
+import { CountdownCircle } from "./CountdownCircle";
+
+const forfeitTimeout = 10000;
 
 export function InGame() {
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
@@ -101,6 +104,13 @@ export function InGame() {
     };
   }, [ws, currentQuote]);
 
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      ws?.send(JSON.stringify({ type: "forfeit", teamId }));
+    }, forfeitTimeout);
+    return () => clearTimeout(timeout);
+  }, [isRoundDecided]);
+
   if (!teamId) {
     navigate("/");
     return null;
@@ -112,7 +122,7 @@ export function InGame() {
         <div className="flex flex-col items-center justify-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
           <p className="text-xl mb-2">Waiting for the next quote</p>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-opacity-50">
             (waiting for all teams to finish)
           </p>
         </div>
@@ -122,6 +132,7 @@ export function InGame() {
 
   return (
     <TeamRoomWrapper>
+      <CountdownCircle timeout={forfeitTimeout} />
       <div className="flex flex-col items-center justify-center">
         {currentQuote && (
           <>

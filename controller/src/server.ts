@@ -169,7 +169,15 @@ export default class Server implements Party.Server {
           })
         );
         return;
-
+      case "forfeit":
+        this.room.broadcast(
+          JSON.stringify({
+            type: "roundDecided",
+            teamId: data.teamId,
+            score: this.teams[data.teamId].score,
+          })
+        );
+        return;
       case "getQuote":
         this.broadcastToSingleClient(
           JSON.stringify({
