@@ -10,6 +10,26 @@ export function Registration() {
   const { ws } = useParty();
   const navigate = useNavigate();
 
+  const requestPermission = async () => {
+    // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
+    if (typeof DeviceMotionEvent.requestPermission !== "function") {
+      return;
+    }
+
+    // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
+    return DeviceMotionEvent.requestPermission()
+      .then((permissionState: PermissionState) => {
+        if (permissionState !== "granted") {
+          alert(
+            "Failed to get permission. You need to allow motion tracking to play the game."
+          );
+        }
+      })
+      .catch((e: Error) => {
+        alert("Failed to get permission: " + e.message);
+      });
+  };
+
   const validateEmail = (email: string) => {
     const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return re.test(String(email).toLowerCase());
@@ -21,9 +41,10 @@ export function Registration() {
     setIsValid(validateEmail(newEmail));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isValid) {
+      await requestPermission();
       if (!ws) return;
       ws.updateProperties({ id: email });
       ws.send(JSON.stringify({ type: "joinTeam", teamId, email }));
@@ -55,15 +76,16 @@ export function Registration() {
             required
           />
         </div>
-        <button
-          type="submit"
-          disabled={!isValid}
-          className={`bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow ${
-            !isValid && "opacity-50 cursor-not-allowed"
-          }`}
-        >
-          Join Team
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={!isValid}
+            className={`bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow
+                disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            Join Team
+          </button>
+        </div>
       </form>
     </div>
   );

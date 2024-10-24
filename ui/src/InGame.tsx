@@ -6,7 +6,7 @@ import { Quote, Option } from "../../common/types";
 import { TeamRoomWrapper } from "./TeamRoomWrapper";
 import { CountdownCircle } from "./CountdownCircle";
 
-const forfeitTimeout = 10000;
+const forfeitTimeout = 15000;
 
 export function InGame() {
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
@@ -17,6 +17,16 @@ export function InGame() {
   const timeRemaining = useRef(forfeitTimeout);
 
   const { ws } = useParty();
+  const vote = createVoter({
+    ws,
+    teamId,
+    option: {
+      value: currentQuote?.options[meIndex] ?? "",
+      status: "undecided",
+    },
+    playerId: ws!.id,
+    timeRemaining: timeRemaining.current,
+  });
 
   useEffect(() => {
     if (!ws) return;
@@ -53,60 +63,31 @@ export function InGame() {
   }, [ws, teamId]);
 
   useEffect(() => {
-    let lastBeta = 0;
+    if (!("requestPermission" in DeviceMotionEvent)) {
+      return;
+    }
+    const handleMotion = function (e: DeviceMotionEvent) {
+      if (isRoundDecided) {
+        return;
+      }
+      const acceleration = e.accelerationIncludingGravity;
 
-    const handleOrientation = (event: DeviceOrientationEvent) => {
-      if (event.beta !== null && currentQuote) {
-        const currentBeta = event.beta;
-
-        if (lastBeta < 70 && currentBeta >= 70) {
-          rejectOption({
-            ws,
-            teamId: teamId!,
-            option: {
-              value: currentQuote.options[meIndex],
-              status: "rejected",
-            },
-            playerId: ws!.id,
-            timeRemaining: timeRemaining.current,
-          });
-        } else if (lastBeta > 110 && currentBeta <= 110) {
-          acceptOption({
-            ws,
-            teamId: teamId!,
-            option: {
-              value: currentQuote.options[meIndex],
-              status: "accepted",
-            },
-            playerId: ws!.id,
-            timeRemaining: timeRemaining.current,
-          });
-        } else if (
-          (lastBeta >= 70 && currentBeta < 70) ||
-          (lastBeta <= 110 && currentBeta > 110)
-        ) {
-          undoOption({
-            ws,
-            teamId: teamId!,
-            option: {
-              value: currentQuote.options[meIndex],
-              status: "undecided",
-            },
-            playerId: ws!.id,
-            timeRemaining: timeRemaining.current,
-          });
-        }
-
-        lastBeta = currentBeta;
+      if (acceleration?.z && acceleration.z > 5) {
+        vote?.("rejectOption");
+      } else if (acceleration?.z && acceleration.z < -5) {
+        vote?.("acceptOption");
       }
     };
 
-    window.addEventListener("deviceorientation", handleOrientation);
+    // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
+    DeviceMotionEvent.requestPermission().then(() => {
+      window.addEventListener("devicemotion", handleMotion);
+    });
 
     return () => {
-      window.removeEventListener("deviceorientation", handleOrientation);
+      window.removeEventListener("devicemotion", handleMotion);
     };
-  }, [ws, currentQuote]);
+  }, [isRoundDecided]);
 
   useEffect(() => {
     if (isRoundDecided) return;
@@ -114,7 +95,6 @@ export function InGame() {
 
     const interval = setInterval(() => {
       timeRemaining.current -= 1000;
-      console.log(timeRemaining.current);
     }, 1000);
 
     const timeout = setTimeout(() => {
@@ -157,54 +137,9 @@ export function InGame() {
             <h1 className="text-4xl font-bold">
               {currentQuote.options[meIndex]}
             </h1>
-            <button
-              onClick={() =>
-                rejectOption({
-                  ws,
-                  teamId,
-                  option: {
-                    value: currentQuote.options[meIndex],
-                    status: "rejected",
-                  },
-                  playerId: ws!.id,
-                  timeRemaining: timeRemaining.current,
-                })
-              }
-            >
-              Reject
-            </button>
-            <button
-              onClick={() =>
-                acceptOption({
-                  ws,
-                  teamId,
-                  option: {
-                    value: currentQuote.options[meIndex],
-                    status: "accepted",
-                  },
-                  playerId: ws!.id,
-                  timeRemaining: timeRemaining.current,
-                })
-              }
-            >
-              Accept
-            </button>
-            <button
-              onClick={() =>
-                undoOption({
-                  ws,
-                  teamId,
-                  option: {
-                    value: currentQuote.options[meIndex],
-                    status: "undecided",
-                  },
-                  playerId: ws!.id,
-                  timeRemaining: timeRemaining.current,
-                })
-              }
-            >
-              Undo
-            </button>
+            <button onClick={() => vote?.("rejectOption")}>Reject</button>
+            <button onClick={() => vote?.("acceptOption")}>Accept</button>
+            <button onClick={() => vote?.("undoOption")}>Undo</button>
           </>
         )}
       </div>
@@ -212,7 +147,7 @@ export function InGame() {
   );
 }
 
-const rejectOption = ({
+const createVoter = ({
   ws,
   teamId,
   option,
@@ -220,69 +155,28 @@ const rejectOption = ({
   timeRemaining,
 }: {
   ws: PartySocket | null;
-  teamId: string;
+  teamId: string | undefined;
   option: Option;
   playerId: string;
   timeRemaining: number;
 }) => {
   if (!ws) return;
-  ws.send(
-    JSON.stringify({
-      type: "rejectOption",
-      teamId,
-      option,
-      playerId,
-      timeRemaining,
-    })
-  );
-};
-
-const acceptOption = ({
-  ws,
-  teamId,
-  option,
-  playerId,
-  timeRemaining,
-}: {
-  ws: PartySocket | null;
-  teamId: string;
-  option: Option;
-  playerId: string;
-  timeRemaining: number;
-}) => {
-  if (!ws) return;
-  ws.send(
-    JSON.stringify({
-      type: "acceptOption",
-      teamId,
-      option,
-      playerId,
-      timeRemaining,
-    })
-  );
-};
-
-const undoOption = ({
-  ws,
-  teamId,
-  playerId,
-  option,
-  timeRemaining,
-}: {
-  ws: PartySocket | null;
-  teamId: string;
-  playerId: string;
-  option: Option;
-  timeRemaining: number;
-}) => {
-  if (!ws) return;
-  ws.send(
-    JSON.stringify({
-      type: "undoOption",
-      teamId,
-      playerId,
-      option,
-      timeRemaining,
-    })
-  );
+  return (type: "rejectOption" | "acceptOption" | "undoOption") =>
+    ws.send(
+      JSON.stringify({
+        type,
+        teamId,
+        option: {
+          ...option,
+          status:
+            type === "undoOption"
+              ? "undecided"
+              : type === "acceptOption"
+              ? "accepted"
+              : "rejected",
+        },
+        playerId,
+        timeRemaining,
+      })
+    );
 };

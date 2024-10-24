@@ -14,4 +14,4 @@ export type Quote = {
   correctOptionIndex: number;
 };
 
-export const maxPlayersPerTeam = 2;
+export const maxPlayersPerTeam = 4;
