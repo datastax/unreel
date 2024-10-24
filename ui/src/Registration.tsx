@@ -46,6 +46,10 @@ export function Registration() {
     if (isValid) {
       await requestPermission();
       if (!ws) return;
+      try {
+        localStorage.setItem("email", email);
+        // eslint-disable-next-line no-empty
+      } catch {}
       ws.updateProperties({ id: email });
       ws.send(JSON.stringify({ type: "joinTeam", teamId, email }));
       navigate(`/team/${teamId}`);

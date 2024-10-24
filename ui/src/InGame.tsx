@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useParty } from "./PartyContext";
 import PartySocket from "partysocket";
@@ -6,27 +6,29 @@ import { Quote, Option } from "../../common/types";
 import { TeamRoomWrapper } from "./TeamRoomWrapper";
 import { CountdownCircle } from "./CountdownCircle";
 
-const forfeitTimeout = 15000;
-
 export function InGame() {
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
   const [meIndex, setMeIndex] = useState<number>(0);
   const { teamId } = useParams();
   const navigate = useNavigate();
   const [isRoundDecided, setIsRoundDecided] = useState(false);
-  const timeRemaining = useRef(forfeitTimeout);
+  const [timeRemaining, setTimeRemaining] = useState(60000);
+  const [currentVote, setCurrentVote] = useState(true);
 
   const { ws } = useParty();
-  const vote = createVoter({
-    ws,
-    teamId,
-    option: {
-      value: currentQuote?.options[meIndex] ?? "",
-      status: "undecided",
-    },
-    playerId: ws!.id,
-    timeRemaining: timeRemaining.current,
-  });
+  const vote = useMemo(
+    () =>
+      createVoter({
+        ws,
+        teamId,
+        option: {
+          value: currentQuote?.options[meIndex] ?? "",
+          status: "undecided",
+        },
+        playerId: ws!.id,
+      }),
+    [ws, teamId, currentQuote, meIndex]
+  );
 
   useEffect(() => {
     if (!ws) return;
@@ -58,6 +60,9 @@ export function InGame() {
         case "roundDecided":
           setIsRoundDecided(true);
           return;
+        case "timeRemaining":
+          setTimeRemaining(data.timeRemaining);
+          return;
       }
     };
   }, [ws, teamId]);
@@ -73,9 +78,9 @@ export function InGame() {
       const acceleration = e.accelerationIncludingGravity;
 
       if (acceleration?.z && acceleration.z > 5) {
-        vote?.("rejectOption");
+        setCurrentVote(false);
       } else if (acceleration?.z && acceleration.z < -5) {
-        vote?.("acceptOption");
+        setCurrentVote(true);
       }
     };
 
@@ -90,23 +95,16 @@ export function InGame() {
   }, [isRoundDecided]);
 
   useEffect(() => {
-    if (isRoundDecided) return;
-    timeRemaining.current = forfeitTimeout;
+    if (currentVote === true) {
+      vote?.("acceptOption");
+    } else {
+      vote?.("rejectOption");
+    }
+  }, [currentVote]);
 
-    const interval = setInterval(() => {
-      timeRemaining.current -= 1000;
-    }, 1000);
-
-    const timeout = setTimeout(() => {
-      ws?.send(
-        JSON.stringify({ type: "forfeit", teamId, quote: currentQuote?.quote })
-      );
-    }, forfeitTimeout);
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, [isRoundDecided, currentQuote]);
+  useEffect(() => {
+    vote?.("undoOption");
+  }, [vote]);
 
   if (!teamId) {
     navigate("/");
@@ -129,7 +127,7 @@ export function InGame() {
 
   return (
     <TeamRoomWrapper>
-      <CountdownCircle key={currentQuote?.quote} timeout={forfeitTimeout} />
+      <CountdownCircle timeout={60000} remainingTime={timeRemaining} />
       <div className="flex flex-col items-center justify-center">
         {currentQuote && (
           <>
@@ -152,13 +150,11 @@ const createVoter = ({
   teamId,
   option,
   playerId,
-  timeRemaining,
 }: {
   ws: PartySocket | null;
   teamId: string | undefined;
   option: Option;
   playerId: string;
-  timeRemaining: number;
 }) => {
   if (!ws) return;
   return (type: "rejectOption" | "acceptOption" | "undoOption") =>
@@ -176,7 +172,6 @@ const createVoter = ({
               : "rejected",
         },
         playerId,
-        timeRemaining,
       })
     );
 };

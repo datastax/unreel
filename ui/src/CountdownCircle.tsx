@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 
 interface CountdownCircleProps {
   timeout: number; // in milliseconds
+  remainingTime: number;
   size?: number; // in pixels
   color?: string;
 }
@@ -9,19 +10,8 @@ interface CountdownCircleProps {
 export const CountdownCircle: React.FC<CountdownCircleProps> = ({
   timeout,
   color = "black",
+  remainingTime,
 }) => {
-  const [remainingTime, setRemainingTime] = useState(timeout);
-
-  useEffect(() => {
-    if (remainingTime <= 0) return;
-
-    const timer = setInterval(() => {
-      setRemainingTime((prevTime) => Math.max(prevTime - 10, 0));
-    }, 10);
-
-    return () => clearInterval(timer);
-  }, [remainingTime]);
-
   const progress = (remainingTime / timeout) * 100;
 
   return (

@@ -4,6 +4,7 @@ import { type Quote, type Team } from "../../common/types";
 export default class Server implements Party.Server {
   constructor(readonly room: Party.Room) {}
 
+  timeRemaining: number = 60000;
   quotes: Quote[] = [];
   teams: Record<number, Team> = {
     1: { score: 0, players: [] },
@@ -12,6 +13,7 @@ export default class Server implements Party.Server {
     4: { score: 0, players: [] },
   };
   currentQuoteIndex: number = 0;
+  timeRemainingInterval: NodeJS.Timeout | null = null;
 
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
     console.log(
@@ -52,6 +54,7 @@ export default class Server implements Party.Server {
       case "startGame":
         this.quotes = await getQuotes();
         this.currentQuoteIndex = 0;
+        this.startTimer();
         this.room.broadcast(
           JSON.stringify({
             type: "gameStarted",
@@ -133,7 +136,7 @@ export default class Server implements Party.Server {
 
         if (acceptedChoice && acceptedChoice.value === correctOption) {
           console.log({ timeRemaining: data });
-          team.score += data.timeRemaining / 1000;
+          team.score += this.timeRemaining / 1000;
           this.room.broadcast(
             JSON.stringify({
               type: "updateTeamScore",
@@ -145,6 +148,10 @@ export default class Server implements Party.Server {
         if (this.currentQuoteIndex === this.quotes.length - 1) {
           this.room.broadcast(JSON.stringify({ type: "gameOver" }));
           return;
+        }
+
+        if (this.timeRemainingInterval) {
+          clearInterval(this.timeRemainingInterval);
         }
 
         this.room.broadcast(
@@ -168,6 +175,9 @@ export default class Server implements Party.Server {
             teams: this.teams,
           })
         );
+        if (this.timeRemainingInterval) {
+          clearInterval(this.timeRemainingInterval);
+        }
         this.room.broadcast(
           JSON.stringify({
             type: "roundDecided",
@@ -212,6 +222,7 @@ export default class Server implements Party.Server {
       return;
     }
 
+    this.startTimer();
     this.currentQuoteIndex++;
     const nextQuote = this.quotes[this.currentQuoteIndex];
     this.room.broadcast(
@@ -230,84 +241,123 @@ export default class Server implements Party.Server {
     this.quotes = [];
     this.room.broadcast(JSON.stringify({ type: "resetGame" }));
   };
+
+  startTimer = () => {
+    this.timeRemaining = 60000;
+    this.timeRemainingInterval = setInterval(() => {
+      this.timeRemaining -= 1000;
+      this.room.broadcast(
+        JSON.stringify({
+          type: "timeRemaining",
+          timeRemaining: this.timeRemaining,
+        })
+      );
+
+      if (this.timeRemaining <= 0) {
+        if (this.timeRemainingInterval) {
+          clearInterval(this.timeRemainingInterval);
+        }
+        this.room.broadcast(JSON.stringify({ type: "roundDecided" }));
+      }
+    }, 1000);
+  };
 }
 
-const getQuotes = async () => [
-  {
-    quote: "Don't call me Shirley",
-    options: ["Airplane", "AI Generated", "Blazing Saddles", "Shirley"],
-    correctOptionIndex: 0,
-  },
-  {
-    quote: "I'm going to make him an offer he can't refuse",
-    options: ["Goodfellas", "The Godfather", "Casino", "Scarface"],
-    correctOptionIndex: 1,
-  },
-  {
-    quote: "Here's looking at you, kid",
-    options: [
-      "Gone with the Wind",
-      "Citizen Kane",
-      "The Maltese Falcon",
-      "Casablanca",
-    ],
-    correctOptionIndex: 3,
-  },
-  {
-    quote: "May the Force be with you",
-    options: [
-      "Star Trek",
-      "Battlestar Galactica",
-      "Star Wars",
-      "The Last Starfighter",
-    ],
-    correctOptionIndex: 2,
-  },
-  {
-    quote: "You can't handle the truth!",
-    options: [
-      "The Verdict",
-      "Judgment at Nuremberg",
-      "12 Angry Men",
-      "A Few Good Men",
-    ],
-    correctOptionIndex: 3,
-  },
-  {
-    quote: "E.T. phone home",
-    options: [
-      "Close Encounters of the Third Kind",
-      "E.T. the Extra-Terrestrial",
-      "The Day the Earth Stood Still",
-      "Alien",
-    ],
-    correctOptionIndex: 1,
-  },
-  {
-    quote: "You talkin' to me?",
-    options: [
-      "Goodfellas",
-      "On the Waterfront",
-      "Taxi Driver",
-      "The Godfather",
-    ],
-    correctOptionIndex: 2,
-  },
-  {
-    quote: "I'll be back",
-    options: ["Predator", "Total Recall", "Commando", "The Terminator"],
-    correctOptionIndex: 3,
-  },
-  {
-    quote: "Here's Johnny!",
-    options: [
-      "Psycho",
-      "The Shining",
-      "Halloween",
-      "A Nightmare on Elm Street",
-    ],
-    correctOptionIndex: 1,
-  },
-];
+const getQuotes = async () => {
+  return [
+    {
+      quote: "Don't call me Shirley",
+      options: ["Airplane", "AI Generated", "Blazing Saddles", "Shirley"],
+      correctOptionIndex: 0,
+    },
+    {
+      quote: "I'm going to make him an offer he can't refuse",
+      options: ["Goodfellas", "The Godfather", "Casino", "Scarface"],
+      correctOptionIndex: 1,
+    },
+    {
+      quote: "Here's looking at you, kid",
+      options: [
+        "Gone with the Wind",
+        "Citizen Kane",
+        "The Maltese Falcon",
+        "Casablanca",
+      ],
+      correctOptionIndex: 3,
+    },
+    {
+      quote: "May the Force be with you",
+      options: [
+        "Star Trek",
+        "Battlestar Galactica",
+        "Star Wars",
+        "The Last Starfighter",
+      ],
+      correctOptionIndex: 2,
+    },
+    {
+      quote: "You can't handle the truth!",
+      options: [
+        "The Verdict",
+        "Judgment at Nuremberg",
+        "12 Angry Men",
+        "A Few Good Men",
+      ],
+      correctOptionIndex: 3,
+    },
+    {
+      quote: "E.T. phone home",
+      options: [
+        "Close Encounters of the Third Kind",
+        "E.T. the Extra-Terrestrial",
+        "The Day the Earth Stood Still",
+        "Alien",
+      ],
+      correctOptionIndex: 1,
+    },
+    {
+      quote: "You talkin' to me?",
+      options: [
+        "Goodfellas",
+        "On the Waterfront",
+        "Taxi Driver",
+        "The Godfather",
+      ],
+      correctOptionIndex: 2,
+    },
+    {
+      quote: "I'll be back",
+      options: ["Predator", "Total Recall", "Commando", "The Terminator"],
+      correctOptionIndex: 3,
+    },
+    {
+      quote: "Here's Johnny!",
+      options: [
+        "Psycho",
+        "The Shining",
+        "Halloween",
+        "A Nightmare on Elm Street",
+      ],
+      correctOptionIndex: 1,
+    },
+  ];
+
+  const quotes = await Promise.all(
+    Array.from({ length: 10 }, () =>
+      fetch(process.env.LANGFLOW_API_URL!, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          return JSON.parse(data.outputs[0].outputs[0].results.text.text);
+        })
+    )
+  );
+  return quotes;
+};
 
 Server satisfies Party.Worker;

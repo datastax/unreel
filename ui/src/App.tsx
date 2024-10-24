@@ -6,8 +6,14 @@ import { PartyProvider } from "./PartyContext";
 import { InGame } from "./InGame";
 import { Admin } from "./Admin";
 import { GameOver } from "./GameOver";
+import { useEffect } from "react";
+import { preventSleep } from "./util/preventSleep";
 
 function App() {
+  useEffect(() => {
+    preventSleep();
+  }, []);
+
   return (
     <PartyProvider>
       <Routes>
