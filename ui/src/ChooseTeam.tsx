@@ -13,7 +13,7 @@ export function ChooseTeam() {
 
   useEffect(() => {
     if (!ws) return;
-    ws.send(JSON.stringify({ type: "getTeams" }));
+    ws.dispatch({ type: "getTeams" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       switch (data.type) {

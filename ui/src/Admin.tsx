@@ -14,8 +14,8 @@ export function Admin() {
   useEffect(() => {
     if (!ws) return;
 
-    ws.send(JSON.stringify({ type: "getTeams" }));
-    ws.send(JSON.stringify({ type: "getQuotes" }));
+    ws.dispatch({ type: "getTeams" });
+    ws.dispatch({ type: "getQuotes" });
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -68,19 +68,19 @@ export function Admin() {
 
   const handleStartGame = () => {
     if (ws) {
-      ws.send(JSON.stringify({ type: "startGame" }));
+      ws.dispatch({ type: "startGame" });
     }
   };
 
   const handleSendNextQuote = () => {
     if (ws) {
-      ws.send(JSON.stringify({ type: "nextQuote" }));
+      ws.dispatch({ type: "nextQuote" });
     }
   };
 
   const handleResetGame = () => {
     if (ws) {
-      ws.send(JSON.stringify({ type: "resetGame" }));
+      ws.dispatch({ type: "resetGame" });
     }
   };
 

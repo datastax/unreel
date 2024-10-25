@@ -14,10 +14,12 @@ export function TeamRoom() {
 
   useEffect(() => {
     if (!ws) return;
-    ws.send(JSON.stringify({ type: "getTeams" }));
+    if (!teamId) return;
+
+    ws.dispatch({ type: "getTeams" });
 
     const handleBeforeUnload = () => {
-      ws.send(JSON.stringify({ type: "leaveTeam", teamId }));
+      ws.dispatch({ type: "leaveTeam", teamId });
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);

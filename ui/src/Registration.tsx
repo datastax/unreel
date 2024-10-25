@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { useParty } from "./PartyContext";
@@ -36,14 +36,18 @@ export function Registration() {
     return re.test(String(email).toLowerCase());
   };
 
+  useEffect(() => {
+    setIsValid(validateEmail(email));
+  }, [email]);
+
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newEmail = e.target.value;
     setEmail(newEmail);
-    setIsValid(validateEmail(newEmail));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!teamId) return;
     if (isValid) {
       await requestPermission();
       if (!ws) return;
@@ -52,10 +56,20 @@ export function Registration() {
         // eslint-disable-next-line no-empty
       } catch {}
       ws.updateProperties({ id: email });
-      ws.send(JSON.stringify({ type: "joinTeam", teamId, email }));
+      ws.dispatch({ type: "joinTeam", teamId, email });
       navigate(`/team/${teamId}`);
     }
   };
+
+  useEffect(() => {
+    try {
+      const email = localStorage.getItem("email");
+      if (email) {
+        setEmail(email);
+      }
+      // eslint-disable-next-line no-empty
+    } catch {}
+  }, []);
 
   if (!teamId) {
     navigate("/");

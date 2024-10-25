@@ -22,7 +22,7 @@ export function GameOver() {
   useEffect(() => {
     if (!ws) return;
 
-    ws.send(JSON.stringify({ type: "getTeams" }));
+    ws.dispatch({ type: "getTeams" });
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -39,7 +39,7 @@ export function GameOver() {
 
   const handlePlayAgain = () => {
     if (ws) {
-      ws.send(JSON.stringify({ type: "resetGame" }));
+      ws.dispatch({ type: "resetGame" });
     }
   };
 
@@ -50,7 +50,7 @@ export function GameOver() {
           You came {suffixify(position || 0)}!
         </h1>
         <p className="text-2xl">
-          You scored a total of {teams[teamId]?.score} points. Check out the
+          You scored a total of {teams[teamId!]?.score} points. Check out the
           leaderboard to see how the other teams did.
         </p>
         <button

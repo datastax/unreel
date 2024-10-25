@@ -33,8 +33,8 @@ export function InGame() {
   useEffect(() => {
     if (!ws) return;
     if (!teamId) return;
-    ws.send(JSON.stringify({ type: "getTeams" }));
-    ws.send(JSON.stringify({ type: "getQuote" }));
+    ws.dispatch({ type: "getTeams" });
+    ws.dispatch({ type: "getQuote" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       switch (data.type) {

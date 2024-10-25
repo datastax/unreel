@@ -1,8 +1,15 @@
 import { createContext, useContext, useState } from "react";
 import { usePartySocket } from "partysocket/react";
 import PartySocket from "partysocket";
+import type { WebSocketAction } from "../../common/events";
 
-const PartyContext = createContext<{ ws: PartySocket | null }>({ ws: null });
+type TypeSafePartySocket = PartySocket & {
+  dispatch: (message: WebSocketAction) => void;
+};
+
+const PartyContext = createContext<{ ws: TypeSafePartySocket | null }>({
+  ws: null,
+});
 
 export const useParty = () => useContext(PartyContext);
 
@@ -23,7 +30,12 @@ export const PartyProvider = ({ children }: { children: React.ReactNode }) => {
     onError: () => {
       setError(true);
     },
-  });
+  }) as TypeSafePartySocket;
+
+  ws.dispatch = (message: WebSocketAction) => {
+    console.log("sending", message);
+    ws.send(JSON.stringify(message));
+  };
 
   if (error) {
     return (
