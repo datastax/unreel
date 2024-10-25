@@ -14,6 +14,7 @@ export function InGame() {
   const [isRoundDecided, setIsRoundDecided] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(60000);
   const [phoneFace, setPhoneFace] = useState<"up" | "down">("up");
+  const hasMotion = "requestPermission" in DeviceMotionEvent;
 
   const { ws } = useParty();
   const vote = useMemo(
@@ -130,7 +131,7 @@ export function InGame() {
           <div className="grid gap-8">
             <div className="grid gap-4">
               <p className="text-xl">This quote:</p>
-              <p className="text-6xl font-bold">"{currentQuote.quote}"</p>
+              <p className="text-2xl font-bold">"{currentQuote.quote}"</p>
             </div>
             <div className="grid gap-4">
               <p className="text-xl">Was said in this movie:</p>
@@ -138,6 +139,22 @@ export function InGame() {
                 {currentQuote.options[meIndex]}
               </h1>
             </div>
+            {!hasMotion && (
+              <div className="grid gap-4">
+                <button
+                  onClick={() => setPhoneFace("up")}
+                  className="bg-white text-black p-2 rounded-md"
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={() => setPhoneFace("down")}
+                  className="bg-white text-black p-2 rounded-md"
+                >
+                  Reject
+                </button>
+              </div>
+            )}
             <div className="grid gap-4">
               <p className="text-xl font-bold">How to Play</p>
               <ul className="grid list-disc mx-4 gap-1">
