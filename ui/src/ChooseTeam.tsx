@@ -40,7 +40,7 @@ export function ChooseTeam() {
               team.players.length >= maxPlayersPerTeam
                 ? "pointer-events-none opacity-50"
                 : ""
-            } rounded grid gap-2 h-full content-center items-center justify-center text-white text-3xl font-bold bg-${
+            } rounded grid gap-2 h-full content-center items-center justify-center text-3xl font-bold bg-${
               teamBgColors[name]
             }`}
             to={`/registration/${name}`}
