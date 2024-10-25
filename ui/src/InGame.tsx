@@ -15,6 +15,11 @@ export function InGame() {
   const [timeRemaining, setTimeRemaining] = useState(60000);
   const [phoneFace, setPhoneFace] = useState<"up" | "down">("up");
   const hasMotion = "requestPermission" in DeviceMotionEvent;
+  const [lastRound, setLastRound] = useState<{
+    lastAnswer: string;
+    correctAnswer: string;
+    score?: number;
+  } | null>(null);
 
   const { ws } = useParty();
   const vote = useMemo(
@@ -61,6 +66,11 @@ export function InGame() {
         case "roundDecided":
           setIsRoundDecided(true);
           setCurrentQuote(null);
+          setLastRound({
+            lastAnswer: data.lastAnswer,
+            correctAnswer: data.correctAnswer,
+            score: data.score,
+          });
           return;
         case "timeRemaining":
           setTimeRemaining(data.timeRemaining);
@@ -112,12 +122,37 @@ export function InGame() {
   if (isRoundDecided || timeRemaining === 0) {
     return (
       <TeamRoomWrapper>
-        <div className="flex flex-col items-center justify-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
-          <p className="text-xl mb-2">Waiting for the next quote</p>
-          <p className="text-sm text-opacity-50">
-            (waiting for all teams to finish)
-          </p>
+        <div className="grid min-h-[calc(100svh-8rem)] gap-4 items-start justify-center">
+          {lastRound && (
+            <div className="grid gap-8">
+              <h1 className="text-5xl font-bold">
+                {lastRound.lastAnswer === lastRound.correctAnswer
+                  ? "Correct!"
+                  : "Wrong!"}
+              </h1>
+              <div className="grid gap-1">
+                <p className="text-xl">You chose</p>
+                <p className="text-2xl font-bold">{lastRound.lastAnswer}</p>
+              </div>
+              <div className="grid gap-1">
+                <p className="text-xl">The correct answer was</p>
+                <p className="text-2xl font-bold">{lastRound.correctAnswer}</p>
+              </div>
+              {lastRound.score && (
+                <div className="grid gap-1">
+                  <p className="text-xl">Your Score</p>
+                  <p className="text-2xl font-bold">{lastRound.score}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="mt-auto text-center">
+            <div className="block mx-auto animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4" />
+            <p className="text-xl mb-2">Waiting for the next quote</p>
+            <p className="text-sm text-opacity-50">
+              (waiting for all teams to finish)
+            </p>
+          </div>
         </div>
       </TeamRoomWrapper>
     );

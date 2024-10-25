@@ -164,6 +164,8 @@ export default class Server implements Party.Server {
           type: "roundDecided",
           teamId: data.teamId,
           score: team.score,
+          lastAnswer: acceptedChoice?.value,
+          correctAnswer: correctOption,
         });
         return;
       case "forfeit": {
@@ -186,6 +188,11 @@ export default class Server implements Party.Server {
           type: "roundDecided",
           teamId: data.teamId,
           score: this.teams[data.teamId].score,
+          lastAnswer: "Forfeited",
+          correctAnswer:
+            this.quotes[this.currentQuoteIndex].options[
+              this.quotes[this.currentQuoteIndex].correctOptionIndex
+            ],
         });
         return;
       }
@@ -257,6 +264,11 @@ export default class Server implements Party.Server {
       if (this.timeRemaining <= 0) {
         this.broadcastToAllClients({
           type: "roundDecided",
+          lastAnswer: "Forfeited",
+          correctAnswer:
+            this.quotes[this.currentQuoteIndex].options[
+              this.quotes[this.currentQuoteIndex].correctOptionIndex
+            ],
         });
       }
     }, 1000);

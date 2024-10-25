@@ -28,7 +28,13 @@ export type WebSocketResponse =
   | { type: "options"; teams: Record<string, Team> }
   | { type: "updateTeamScore"; teams: Record<string, Team> }
   | { type: "gameOver" }
-  | { type: "roundDecided"; teamId?: string; score?: number }
+  | {
+      type: "roundDecided";
+      teamId?: string;
+      score?: number;
+      lastAnswer?: string;
+      correctAnswer?: string;
+    }
   | { type: "getQuote"; quote: Quote }
   | { type: "nextQuote"; quote: Quote }
   | { type: "resetGame" }
