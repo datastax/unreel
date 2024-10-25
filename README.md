@@ -1,4 +1,4 @@
-# FauxFlick
+# UnReel
 
 > ⚠️ This is a proof-of-concept and a research project under rapid and heavy development. It is nowhere near finished and was just started. To get up to speed, please read the [design doc](https://www.tldraw.com/ro/bJJ_oD7wKaF0GoDq5Lryv?d=v322.64.1732.1073.page).
 
