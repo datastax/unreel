@@ -13,7 +13,7 @@ export function InGame() {
   const navigate = useNavigate();
   const [isRoundDecided, setIsRoundDecided] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(60000);
-  const [currentVote, setCurrentVote] = useState(true);
+  const [phoneFace, setPhoneFace] = useState<"up" | "down">("up");
 
   const { ws } = useParty();
   const vote = useMemo(
@@ -59,6 +59,7 @@ export function InGame() {
           return;
         case "roundDecided":
           setIsRoundDecided(true);
+          setCurrentQuote(null);
           return;
         case "timeRemaining":
           setTimeRemaining(data.timeRemaining);
@@ -72,15 +73,12 @@ export function InGame() {
       return;
     }
     const handleMotion = function (e: DeviceMotionEvent) {
-      if (isRoundDecided) {
-        return;
-      }
       const acceleration = e.accelerationIncludingGravity;
 
       if (acceleration?.z && acceleration.z > 5) {
-        setCurrentVote(false);
+        setPhoneFace("down");
       } else if (acceleration?.z && acceleration.z < -5) {
-        setCurrentVote(true);
+        setPhoneFace("up");
       }
     };
 
@@ -95,16 +93,15 @@ export function InGame() {
   }, [isRoundDecided]);
 
   useEffect(() => {
-    if (currentVote === true) {
+    if (isRoundDecided) {
+      return;
+    }
+    if (phoneFace === "up") {
       vote?.("acceptOption");
     } else {
       vote?.("rejectOption");
     }
-  }, [currentVote]);
-
-  useEffect(() => {
-    vote?.("undoOption");
-  }, [vote]);
+  }, [phoneFace, vote, isRoundDecided]);
 
   if (!teamId) {
     navigate("/");
