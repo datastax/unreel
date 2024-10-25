@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { PlayerCount } from "./PlayerCount";
 import { teamBgColors } from "./util/teamBgColors";
 import { useParty } from "./PartyContext";
-import type { Team } from "../../common/types";
+import { maxPlayersPerTeam, type Team } from "../../common/types";
 
 export function ChooseTeam() {
   const [playersByTeam, setPlayersByTeam] = useState<Record<string, Team>>({});
@@ -31,7 +31,13 @@ export function ChooseTeam() {
       {Object.entries(playersByTeam).map(([name, team]) => (
         <Link
           key={name}
-          className={`rounded grid gap-2 h-full content-center items-center justify-center text-white text-3xl font-bold bg-${teamBgColors[name]}`}
+          className={`${
+            team.players.length >= maxPlayersPerTeam
+              ? "pointer-events-none opacity-50"
+              : ""
+          } rounded grid gap-2 h-full content-center items-center justify-center text-white text-3xl font-bold bg-${
+            teamBgColors[name]
+          }`}
           to={`/registration/${name}`}
         >
           Team {name}

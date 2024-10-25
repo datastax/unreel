@@ -13,6 +13,14 @@ export function TeamRoom() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!teamId) return;
+    if (currentPlayerCount > maxPlayersPerTeam) {
+      alert("Sorry, your team just got too big! Try again!");
+      navigate("/");
+    }
+  }, [currentPlayerCount, teamId]);
+
+  useEffect(() => {
     if (!ws) return;
     if (!teamId) return;
 
