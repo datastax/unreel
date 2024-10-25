@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@sentry/react": "^8.35.0",
     "partysocket": "^1.0.2",
     "posthog-js": "^1.176.0",
     "react": "^18.3.1",
