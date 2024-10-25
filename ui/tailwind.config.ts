@@ -17,5 +17,7 @@ module.exports = {
     "bg-ds-secondary",
     "bg-ds-tertiary",
     "bg-ds-quaternary",
+    "text-black",
+    "text-opacity-75",
   ],
 };
