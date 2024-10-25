@@ -138,12 +138,10 @@ export function InGame() {
                 <p className="text-xl">The correct answer was</p>
                 <p className="text-2xl font-bold">{lastRound.correctAnswer}</p>
               </div>
-              {lastRound.score && (
-                <div className="grid gap-1">
-                  <p className="text-xl">Your Score</p>
-                  <p className="text-2xl font-bold">{lastRound.score}</p>
-                </div>
-              )}
+              <div className="grid gap-1">
+                <p className="text-xl">Your Score</p>
+                <p className="text-2xl font-bold">{lastRound.score ?? "-"}</p>
+              </div>
             </div>
           )}
           <div className="mt-auto text-center">

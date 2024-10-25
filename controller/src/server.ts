@@ -156,10 +156,6 @@ export default class Server implements Party.Server {
           return;
         }
 
-        if (this.timeRemainingInterval) {
-          clearInterval(this.timeRemainingInterval);
-        }
-
         this.broadcastToAllClients({
           type: "roundDecided",
           teamId: data.teamId,
@@ -181,9 +177,6 @@ export default class Server implements Party.Server {
           type: "options",
           teams: this.teams,
         });
-        if (this.timeRemainingInterval) {
-          clearInterval(this.timeRemainingInterval);
-        }
         this.broadcastToAllClients({
           type: "roundDecided",
           teamId: data.teamId,
@@ -258,7 +251,7 @@ export default class Server implements Party.Server {
       this.timeRemaining -= 1000;
       this.broadcastToAllClients({
         type: "timeRemaining",
-        timeRemaining: this.timeRemaining,
+        timeRemaining: Math.max(this.timeRemaining, 0),
       });
 
       if (this.timeRemaining <= 0) {
