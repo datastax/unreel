@@ -8,7 +8,8 @@ export default defineConfig({
   server: {
     host: true,
 
-    // @ts-expect-error for some reason, TypeScript thinks host MUST be an object
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore for some reason, TypeScript thinks host MUST be an object
     https: true,
   },
 });
