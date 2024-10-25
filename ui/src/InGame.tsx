@@ -52,7 +52,7 @@ export function InGame() {
           setCurrentQuote(data.quote);
           return;
         case "gameOver":
-          navigate(`/game-over/`);
+          navigate(`/game-over/${teamId}`);
           return;
         case "resetGame":
           navigate(`/`);
@@ -138,10 +138,18 @@ export function InGame() {
                 {currentQuote.options[meIndex]}
               </h1>
             </div>
-            <ul className="grid list-disc mx-4 gap-1">
-              <li>Leave your phone face up to accept this answer.</li>
-              <li>Turn your phone face down to reject this answer.</li>
-            </ul>
+            <div className="grid gap-4">
+              <p className="text-xl font-bold">How to Play</p>
+              <ul className="grid list-disc mx-4 gap-1">
+                <li>Discuss with your team if this is correct.</li>
+                <li>
+                  If <strong>incorrect</strong>, turn your phone face down.
+                </li>
+                <li>
+                  If <strong>correct</strong>, leave your phone face up.
+                </li>
+              </ul>
+            </div>
           </div>
         )}
       </div>

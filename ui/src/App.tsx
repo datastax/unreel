@@ -22,7 +22,7 @@ function App() {
         <Route path="/team/:teamId" element={<TeamRoom />} />
         <Route path="/game/:teamId" element={<InGame />} />
         <Route path="/admin" element={<Admin />} />
-        <Route path="/game-over" element={<GameOver />} />
+        <Route path="/game-over/:teamId" element={<GameOver />} />
       </Routes>
     </PartyProvider>
   );

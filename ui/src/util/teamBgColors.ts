@@ -1,6 +1,6 @@
 export const teamBgColors: Record<string, string> = {
-  1: "blue-500",
-  2: "red-500",
-  3: "green-500",
-  4: "orange-500",
+  1: "ds-primary",
+  2: "ds-secondary",
+  3: "ds-tertiary",
+  4: "ds-quaternary text-black text-opacity-75",
 };

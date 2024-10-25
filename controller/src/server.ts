@@ -7,10 +7,10 @@ export default class Server implements Party.Server {
   timeRemaining: number = 60000;
   quotes: Quote[] = [];
   teams: Record<number, Team> = {
-    1: { score: 0, players: [] },
-    2: { score: 0, players: [] },
-    3: { score: 0, players: [] },
-    4: { score: 0, players: [] },
+    1: { id: "1", score: 0, players: [] },
+    2: { id: "2", score: 0, players: [] },
+    3: { id: "3", score: 0, players: [] },
+    4: { id: "4", score: 0, players: [] },
   };
   currentQuoteIndex: number = 0;
   timeRemainingInterval: NodeJS.Timeout | null = null;
@@ -232,10 +232,10 @@ export default class Server implements Party.Server {
 
   resetGame = () => {
     this.teams = {
-      1: { score: 0, players: [] },
-      2: { score: 0, players: [] },
-      3: { score: 0, players: [] },
-      4: { score: 0, players: [] },
+      1: { id: "1", score: 0, players: [] },
+      2: { id: "2", score: 0, players: [] },
+      3: { id: "3", score: 0, players: [] },
+      4: { id: "4", score: 0, players: [] },
     };
     this.currentQuoteIndex = 0;
     this.quotes = [];

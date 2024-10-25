@@ -62,9 +62,12 @@ export function TeamRoom() {
         <li>The only phone on your team facing up is your submitted answer.</li>
         <li>The faster you answer correctly, the higher your score.</li>
       </ul>
-      <div className="text-center">
+      <div className="text-center mt-auto">
         <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
-        <p className="text-xl">Waiting for players...</p>
+        <p className="text-xl">
+          Waiting for{" "}
+          {currentPlayerCount < maxPlayersPerTeam ? "players" : "host"}...
+        </p>
         <PlayerCount count={currentPlayerCount} />
       </div>
     </TeamRoomWrapper>

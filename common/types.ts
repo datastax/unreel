@@ -4,6 +4,7 @@ export type Option = {
 };
 
 export type Team = {
+  id: string;
   score: number;
   players: { id: string; email: string; choices: Record<string, Option> }[];
 };

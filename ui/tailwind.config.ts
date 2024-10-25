@@ -2,8 +2,20 @@
 module.exports = {
   content: ["./src/**/*.{js,jsx,ts,tsx}", "./index.html"],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        "ds-primary": "#7f3aa4",
+        "ds-secondary": "#ac115f",
+        "ds-tertiary": "#de2337",
+        "ds-quaternary": "#ffca0b",
+      },
+    },
   },
   plugins: [],
-  safelist: ["bg-blue-500", "bg-red-500", "bg-green-500", "bg-orange-500"],
+  safelist: [
+    "bg-ds-primary",
+    "bg-ds-secondary",
+    "bg-ds-tertiary",
+    "bg-ds-quaternary",
+  ],
 };
