@@ -126,14 +126,14 @@ export function Admin() {
               {allQuotes.map((quote, index) => (
                 <div
                   key={index}
-                  className={`border grid gap-1 p-4 rounded flex-shrink-0 w-64 ${
+                  className={`border grid gap-4 p-4 content-start rounded w-64 ${
                     currentQuote && currentQuote.quote === quote.quote
                       ? "border-2 border-ds-primary"
                       : "border-neutral-800"
                   }`}
                 >
                   <p className="font-bold">&ldquo;{quote.quote}&rdquo;</p>
-                  <ul className="list-disc list-inside">
+                  <ul className="list-disc list-outside px-4">
                     {quote.options.map((option, optionIndex) => (
                       <li
                         key={optionIndex}

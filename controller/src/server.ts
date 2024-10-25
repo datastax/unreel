@@ -259,100 +259,26 @@ export default class Server implements Party.Server {
 }
 
 const getQuotes = async () => {
-  return [
-    {
-      quote: "Don't call me Shirley",
-      options: ["Airplane", "AI Generated", "Blazing Saddles", "Shirley"],
-      correctOptionIndex: 0,
+  const data = await fetch(process.env.LANGFLOW_API_URL!, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
+      "Content-Type": "application/json",
     },
-    {
-      quote: "I'm going to make him an offer he can't refuse",
-      options: ["Goodfellas", "The Godfather", "Casino", "Scarface"],
-      correctOptionIndex: 1,
-    },
-    {
-      quote: "Here's looking at you, kid",
-      options: [
-        "Gone with the Wind",
-        "Citizen Kane",
-        "The Maltese Falcon",
-        "Casablanca",
-      ],
-      correctOptionIndex: 3,
-    },
-    {
-      quote: "May the Force be with you",
-      options: [
-        "Star Trek",
-        "Battlestar Galactica",
-        "Star Wars",
-        "The Last Starfighter",
-      ],
-      correctOptionIndex: 2,
-    },
-    {
-      quote: "You can't handle the truth!",
-      options: [
-        "The Verdict",
-        "Judgment at Nuremberg",
-        "12 Angry Men",
-        "A Few Good Men",
-      ],
-      correctOptionIndex: 3,
-    },
-    {
-      quote: "E.T. phone home",
-      options: [
-        "Close Encounters of the Third Kind",
-        "E.T. the Extra-Terrestrial",
-        "The Day the Earth Stood Still",
-        "Alien",
-      ],
-      correctOptionIndex: 1,
-    },
-    {
-      quote: "You talkin' to me?",
-      options: [
-        "Goodfellas",
-        "On the Waterfront",
-        "Taxi Driver",
-        "The Godfather",
-      ],
-      correctOptionIndex: 2,
-    },
-    {
-      quote: "I'll be back",
-      options: ["Predator", "Total Recall", "Commando", "The Terminator"],
-      correctOptionIndex: 3,
-    },
-    {
-      quote: "Here's Johnny!",
-      options: [
-        "Psycho",
-        "The Shining",
-        "Halloween",
-        "A Nightmare on Elm Street",
-      ],
-      correctOptionIndex: 1,
-    },
-  ];
+    body: JSON.stringify({
+      input_value: "10",
+      output_type: "chat",
+      input_type: "chat",
+      tweaks: {},
+    }),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      console.dir(data, { depth: Infinity });
+      return JSON.parse(data.outputs[0].outputs[0].results.text.text);
+    });
 
-  const quotes = await Promise.all(
-    Array.from({ length: 10 }, () =>
-      fetch(process.env.LANGFLOW_API_URL!, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          return JSON.parse(data.outputs[0].outputs[0].results.text.text);
-        })
-    )
-  );
-  return quotes;
+  return data.quotes;
 };
 
 Server satisfies Party.Worker;
