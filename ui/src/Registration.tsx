@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { teamBgColors } from "./util/teamBgColors";
 import { useNavigate, useParams } from "react-router-dom";
+
 import { useParty } from "./PartyContext";
+import { TeamRoomWrapper } from "./TeamRoomWrapper";
 
 export function Registration() {
   const [email, setEmail] = useState("");
@@ -62,14 +63,16 @@ export function Registration() {
   }
 
   return (
-    <div
-      className={`flex flex-col items-center justify-center h-screen bg-${teamBgColors[teamId]} text-white`}
-    >
-      <h1 className="text-3xl font-bold mb-8">Join Team {teamId}</h1>
+    <TeamRoomWrapper>
+      <h1 className="text-5xl font-bold mb-8">Join Team {teamId}</h1>
+      <p className="text-xl mb-8">
+        We need to know where to send your prize if you win, so please enter
+        your email below.
+      </p>
       <form onSubmit={handleSubmit} className="w-full max-w-sm">
         <div className="mb-4">
-          <label htmlFor="email" className="block text-sm font-bold mb-2">
-            Email:
+          <label htmlFor="email" className="block font-bold mb-2">
+            Email Address
           </label>
           <input
             type="email"
@@ -80,17 +83,21 @@ export function Registration() {
             required
           />
         </div>
-        <div className="flex gap-2">
+        <p className="text-sm mb-4">
+          This game requires a bit of motion tracking, so please allow it when
+          asked.
+        </p>
+        <div className="flex gap-2 items-center">
           <button
             type="submit"
             disabled={!isValid}
-            className={`bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow
+            className={`bg-white w-full hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow
                 disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             Join Team
           </button>
         </div>
       </form>
-    </div>
+    </TeamRoomWrapper>
   );
 }

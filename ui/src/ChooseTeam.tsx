@@ -31,7 +31,7 @@ export function ChooseTeam() {
       {Object.entries(playersByTeam).map(([name, team]) => (
         <Link
           key={name}
-          className={`rounded grid gap-2 h-full content-center items-center justify-center text-white text-xl font-bold bg-${teamBgColors[name]}`}
+          className={`rounded grid gap-2 h-full content-center items-center justify-center text-white text-3xl font-bold bg-${teamBgColors[name]}`}
           to={`/registration/${name}`}
         >
           Team {name}

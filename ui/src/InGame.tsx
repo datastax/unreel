@@ -108,7 +108,7 @@ export function InGame() {
     return null;
   }
 
-  if (isRoundDecided) {
+  if (isRoundDecided || timeRemaining === 0) {
     return (
       <TeamRoomWrapper>
         <div className="flex flex-col items-center justify-center">
@@ -127,15 +127,22 @@ export function InGame() {
       <CountdownCircle timeout={60000} remainingTime={timeRemaining} />
       <div className="flex flex-col items-center justify-center">
         {currentQuote && (
-          <>
-            <p className="text mb-4 italic">"{currentQuote.quote}"</p>
-            <h1 className="text-4xl font-bold">
-              {currentQuote.options[meIndex]}
-            </h1>
-            <button onClick={() => vote?.("rejectOption")}>Reject</button>
-            <button onClick={() => vote?.("acceptOption")}>Accept</button>
-            <button onClick={() => vote?.("undoOption")}>Undo</button>
-          </>
+          <div className="grid gap-8">
+            <div className="grid gap-4">
+              <p className="text-xl">This quote:</p>
+              <p className="text-6xl font-bold">"{currentQuote.quote}"</p>
+            </div>
+            <div className="grid gap-4">
+              <p className="text-xl">Was said in this movie:</p>
+              <h1 className="text-4xl font-bold">
+                {currentQuote.options[meIndex]}
+              </h1>
+            </div>
+            <ul className="grid list-disc mx-4 gap-1">
+              <li>Leave your phone face up to accept this answer.</li>
+              <li>Turn your phone face down to reject this answer.</li>
+            </ul>
+          </div>
         )}
       </div>
     </TeamRoomWrapper>
