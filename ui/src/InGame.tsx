@@ -166,12 +166,18 @@ export function InGame() {
               <p className="text-xl">This quote:</p>
               <p className="text-2xl font-bold">"{currentQuote.quote}"</p>
             </div>
-            <div className="grid gap-4">
-              <p className="text-xl">Was said in this movie:</p>
-              <h1 className="text-4xl font-bold">
-                {currentQuote.options[meIndex]}
+            {currentQuote.options[meIndex].toLowerCase() === "ai generated" ? (
+              <h1 className="text-xl">
+                Was never said in a movie (AI Generated).
               </h1>
-            </div>
+            ) : (
+              <div className="grid gap-4">
+                <p className="text-xl">Was said in this movie:</p>
+                <h1 className="text-4xl font-bold">
+                  {currentQuote.options[meIndex]}
+                </h1>
+              </div>
+            )}
             {!hasMotion && (
               <div className="grid gap-4">
                 <button
