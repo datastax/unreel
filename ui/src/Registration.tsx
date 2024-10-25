@@ -37,6 +37,18 @@ export function Registration() {
   };
 
   useEffect(() => {
+    if (!teamId) {
+      navigate("/");
+    }
+  }, [teamId, navigate]);
+
+  useEffect(() => {
+    if (!ws) return;
+    if (!teamId) return;
+    ws.dispatch({ type: "joinTeam", teamId, email: ws.id });
+  }, [ws, teamId, email]);
+
+  useEffect(() => {
     setIsValid(validateEmail(email));
   }, [email]);
 
@@ -56,7 +68,6 @@ export function Registration() {
         // eslint-disable-next-line no-empty
       } catch {}
       ws.updateProperties({ id: email });
-      ws.dispatch({ type: "joinTeam", teamId, email });
       navigate(`/team/${teamId}`);
     }
   };
@@ -70,11 +81,6 @@ export function Registration() {
       // eslint-disable-next-line no-empty
     } catch {}
   }, []);
-
-  if (!teamId) {
-    navigate("/");
-    return null;
-  }
 
   return (
     <TeamRoomWrapper>

@@ -14,6 +14,11 @@ export function ChooseTeam() {
 
   useEffect(() => {
     if (!ws) return;
+    ws.dispatch({ type: "leaveTeam", playerId: ws.id });
+  }, [ws]);
+
+  useEffect(() => {
+    if (!ws) return;
     ws.dispatch({ type: "getTeams" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);

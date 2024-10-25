@@ -25,16 +25,6 @@ export function TeamRoom() {
     if (!teamId) return;
 
     ws.dispatch({ type: "getTeams" });
-
-    const handleBeforeUnload = () => {
-      ws.dispatch({ type: "leaveTeam", teamId });
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
   }, [ws, teamId]);
 
   useEffect(() => {

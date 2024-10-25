@@ -3,7 +3,7 @@ import type { Option, Team, Quote } from "./types";
 export type WebSocketAction =
   | { type: "getTeams" }
   | { type: "joinTeam"; teamId: string; email: string }
-  | { type: "leaveTeam"; teamId: string }
+  | { type: "leaveTeam"; playerId: string }
   | { type: "startGame" }
   | { type: "getQuotes" }
   | { type: "rejectOption"; teamId: string; option: Option; playerId: string }

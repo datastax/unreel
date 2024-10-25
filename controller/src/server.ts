@@ -38,19 +38,28 @@ export default class Server implements Party.Server {
         );
         return;
       case "joinTeam":
-        this.teams[data.teamId].players.push({
-          id: sender.id,
-          email: data.email,
-          choices: {},
-        });
+        const existingPlayerIndex = this.teams[data.teamId].players.findIndex(
+          (player) => player.email === data.email
+        );
+        if (existingPlayerIndex !== -1) {
+          // Update existing player's id if they reconnect
+          this.teams[data.teamId].players[existingPlayerIndex].id = sender.id;
+        } else {
+          // Add new player if they don't exist
+          this.teams[data.teamId].players.push({
+            id: sender.id,
+            email: data.email,
+            choices: {},
+          });
+        }
         this.broadcastToAllClients({ type: "playerJoined", teams: this.teams });
         return;
       case "leaveTeam":
-        this.teams[data.teamId].players = this.teams[
-          data.teamId
-        ].players.filter(
-          (player: Team["players"][number]) => player.id !== sender.id
-        );
+        Object.values(this.teams).forEach((team) => {
+          team.players = team.players.filter(
+            (player: Team["players"][number]) => player.id !== data.playerId
+          );
+        });
         this.broadcastToAllClients({ type: "playerLeft", teams: this.teams });
         return;
       case "startGame":
