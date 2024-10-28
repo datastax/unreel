@@ -272,8 +272,22 @@ export default class Server implements Party.Server {
   };
 }
 
+function shuffle(array: Array<any>) {
+  for (let i = array.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1)); // random index from 0 to i
+
+    // swap elements array[i] and array[j]
+    // we use "destructuring assignment" syntax to achieve that
+    // you'll find more details about that syntax in later chapters
+    // same can be written as:
+    // let t = array[i]; array[i] = array[j]; array[j] = t
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
 const getQuotes = async () => {
-  const data = await fetch(process.env.LANGFLOW_API_URL!, {
+  const quotes = await fetch(process.env.LANGFLOW_API_URL!, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
@@ -289,10 +303,12 @@ const getQuotes = async () => {
     .then((res) => res.json())
     .then((data) => {
       console.dir(data, { depth: Infinity });
-      return JSON.parse(data.outputs[0].outputs[0].results.text.text);
+      const real = JSON.parse(data.outputs[0].outputs[0].results.text.text);
+      const fake = JSON.parse(data.outputs[0].outputs[1].results.text.text);
+      return shuffle([...real.quotes, ...fake.quotes]);
     });
-
-  return data.quotes;
+  console.log(quotes);
+  return quotes;
 };
 
 Server satisfies Party.Worker;
