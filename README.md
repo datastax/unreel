@@ -20,8 +20,9 @@ To run this locally,
 
 1. Clone the repo.
 2. `cd` into each directory (`controller` and `ui`) and run `pnpm install` to install the dependencies.
-3. Run `npx partykit dev` in the `controller` directory to start the PartyKit server.
-4. Run `pnpm dev` in the `ui` directory to start the Astro app.
+3. Copy the `ui/.env.example` to `ui/.env` and update the `VITE_PARTYKIT_HOST` to `http://localhost:1999`
+4. Run `npx partykit dev` in the `controller` directory to start the PartyKit server.
+5. Run `pnpm dev` in the `ui` directory to start the Astro app.
 
 Both components should now be running locally and support live reloads.
 
