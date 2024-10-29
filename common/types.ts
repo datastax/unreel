@@ -20,4 +20,12 @@ export type Quote = {
   correctOptionIndex: number;
 };
 
-export const maxPlayersPerTeam = 4;
+export type GameState = {
+  teams: Record<string, Team>;
+  quotes: Quote[];
+  currentQuoteIndex: number;
+  timeRemaining: number;
+  isGameStarted: boolean;
+  gameEndedAt: number | null;
+  teamAnswers: Record<string, number>[];
+};

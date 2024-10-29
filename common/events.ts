@@ -1,4 +1,4 @@
-import type { Option, Team, Quote } from "./types";
+import type { Option, Team, Quote, GameState } from "./types";
 
 export type WebSocketAction =
   | { type: "getState" }
@@ -11,15 +11,5 @@ export type WebSocketAction =
   | { type: "forfeit"; teamId: string }
   | { type: "nextQuote" }
   | { type: "resetGame" };
-
-export type GameState = {
-  teams: Record<string, Team>;
-  quotes: Quote[];
-  currentQuoteIndex: number;
-  timeRemaining: number;
-  isGameStarted: boolean;
-  gameEndedAt: number | null;
-  teamAnswers: Record<string, number>[];
-};
 
 export type WebSocketResponse = { type: "state"; state: GameState };

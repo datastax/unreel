@@ -1,7 +1,11 @@
 import type * as Party from "partykit/server";
-import { type Option, type Quote, type Team } from "../../common/types";
 import {
   type GameState,
+  type Option,
+  type Quote,
+  type Team,
+} from "../../common/types";
+import {
   type WebSocketAction,
   type WebSocketResponse,
 } from "../../common/events";

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { useParty } from "./PartyContext";
 import { TeamRoomWrapper } from "./TeamRoomWrapper";
-import { maxPlayersPerTeam } from "../../common/types";
+import { maxPlayersPerTeam } from "../../common/util";
 import { WebSocketResponse } from "../../common/events";
 
 export function Registration() {

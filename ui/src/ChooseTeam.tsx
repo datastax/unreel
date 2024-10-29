@@ -4,7 +4,8 @@ import { Link } from "react-router-dom";
 import { PlayerCount } from "./PlayerCount";
 import { teamBgColors } from "./util/teamBgColors";
 import { useParty } from "./PartyContext";
-import { maxPlayersPerTeam, type Team } from "../../common/types";
+import { type Team } from "../../common/types";
+import { maxPlayersPerTeam } from "../../common/util";
 import { DataStax } from "./DataStax";
 import { WebSocketResponse } from "../../common/events";
 
