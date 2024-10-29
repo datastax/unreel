@@ -68,6 +68,7 @@ export function Registration() {
         // eslint-disable-next-line no-empty
       } catch {}
       ws.updateProperties({ id: email });
+      ws.reconnect();
       navigate(`/team/${teamId}`);
     }
   };

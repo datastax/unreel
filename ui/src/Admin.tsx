@@ -45,8 +45,10 @@ export function Admin() {
         case "roundDecided":
           {
             const updatedTeams = { ...teams };
-            updatedTeams[data.teamId].score = data.score;
-            setTeams(updatedTeams);
+            if (data.teamId) {
+              updatedTeams[data.teamId].score = data.score;
+              setTeams(updatedTeams);
+            }
           }
           break;
       }
