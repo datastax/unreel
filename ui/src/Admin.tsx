@@ -19,13 +19,9 @@ export function Admin() {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      switch (data.type) {
-        case "state":
-          setTeams(() => data.state.teams);
-          setAllQuotes(() => data.state.quotes);
-          setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
-          break;
-      }
+      setTeams(() => data.state.teams);
+      setAllQuotes(() => data.state.quotes);
+      setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
     };
   }, [ws]);
 

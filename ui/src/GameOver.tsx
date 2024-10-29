@@ -26,11 +26,7 @@ export function GameOver() {
     ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      switch (data.type) {
-        case "state":
-          setTeams(data.state.teams);
-          break;
-      }
+      setTeams(data.state.teams);
     };
   }, [ws, navigate]);
 

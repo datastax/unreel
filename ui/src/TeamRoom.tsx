@@ -25,20 +25,16 @@ export function TeamRoom() {
     if (!teamId) return;
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      switch (data.type) {
-        case "state":
-          if (data.state.teams[teamId].players.length > maxPlayersPerTeam) {
-            alert("Sorry, your team just got too big! Try again!");
-            navigate("/");
-            return;
-          }
-          if (data.state.isGameStarted) {
-            navigate(`/game/${teamId}`);
-            return;
-          }
-          setCurrentPlayerCount(data.state.teams[teamId].players.length);
-          break;
+      if (data.state.teams[teamId].players.length > maxPlayersPerTeam) {
+        alert("Sorry, your team just got too big! Try again!");
+        navigate("/");
+        return;
       }
+      if (data.state.isGameStarted) {
+        navigate(`/game/${teamId}`);
+        return;
+      }
+      setCurrentPlayerCount(data.state.teams[teamId].players.length);
     };
   }, [ws, teamId]);
 

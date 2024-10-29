@@ -43,53 +43,45 @@ export function InGame() {
     ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      switch (data.type) {
-        case "state":
-          {
-            setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
-            setMeIndex(
-              data.state.teams[teamId].players.findIndex(
-                (p: { email: string }) => p.email === ws.id
-              )
-            );
-            setTimeRemaining(data.state.timeRemaining);
+      setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
+      setMeIndex(
+        data.state.teams[teamId].players.findIndex(
+          (p: { email: string }) => p.email === ws.id
+        )
+      );
+      setTimeRemaining(data.state.timeRemaining);
 
-            if (data.state.timeRemaining === 0) {
-              ws.dispatch({ type: "forfeit", teamId });
-            }
+      if (data.state.timeRemaining === 0) {
+        ws.dispatch({ type: "forfeit", teamId });
+      }
 
-            const isRoundDecided =
-              data.state.timeRemaining === 0 ||
-              data.state.teamAnswers?.[data.state.currentQuoteIndex]?.[
-                teamId
-              ] !== undefined;
+      const isRoundDecided =
+        data.state.timeRemaining === 0 ||
+        data.state.teamAnswers?.[data.state.currentQuoteIndex]?.[teamId] !==
+          undefined;
 
-            setIsRoundDecided(isRoundDecided);
+      setIsRoundDecided(isRoundDecided);
 
-            if (isRoundDecided) {
-              // A little hack to reset non-phone devices during local testing on multiple browsers
-              if (!hasMotion) {
-                setPhoneFace("up");
-              }
+      if (isRoundDecided) {
+        // A little hack to reset non-phone devices during local testing on multiple browsers
+        if (!hasMotion) {
+          setPhoneFace("up");
+        }
 
-              setLastRound({
-                lastAnswer:
-                  data.state.quotes[data.state.currentQuoteIndex].options[
-                    data.state.teamAnswers[data.state.currentQuoteIndex][teamId]
-                  ],
-                correctAnswer:
-                  data.state.quotes[data.state.currentQuoteIndex].options[
-                    data.state.quotes[data.state.currentQuoteIndex]
-                      .correctOptionIndex
-                  ],
-              });
-            }
+        setLastRound({
+          lastAnswer:
+            data.state.quotes[data.state.currentQuoteIndex].options[
+              data.state.teamAnswers[data.state.currentQuoteIndex][teamId]
+            ],
+          correctAnswer:
+            data.state.quotes[data.state.currentQuoteIndex].options[
+              data.state.quotes[data.state.currentQuoteIndex].correctOptionIndex
+            ],
+        });
+      }
 
-            if (data.state.gameEndedAt) {
-              navigate(`/game-over/${teamId}`);
-            }
-          }
-          return;
+      if (data.state.gameEndedAt) {
+        navigate(`/game-over/${teamId}`);
       }
     };
   }, [ws, teamId]);
