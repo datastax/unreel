@@ -50,7 +50,7 @@ export function Registration() {
     ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      if (data.state.teams[teamId].players.length >= maxPlayersPerTeam) {
+      if (data.state.teams[teamId].players.length > maxPlayersPerTeam) {
         alert("This team is full. Please choose another team.");
         navigate("/");
         return;

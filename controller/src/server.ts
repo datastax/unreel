@@ -27,9 +27,7 @@ const initialState = {
 
 export default class Server implements Party.Server {
   constructor(readonly room: Party.Room) {}
-
   timeRemainingInterval: NodeJS.Timeout | null = null;
-
   state: GameState = initialState;
 
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
@@ -180,7 +178,6 @@ export default class Server implements Party.Server {
         }
 
         if (this.state.currentQuoteIndex === this.state.quotes.length - 1) {
-          this.state.isGameStarted = false;
           this.state.gameEndedAt = Date.now();
           this.broadcastToAllClients({ type: "state", state: this.state });
           return;
@@ -197,7 +194,7 @@ export default class Server implements Party.Server {
         this.broadcastToAllClients({ type: "state", state: this.state });
         return;
       case "resetGame":
-        this.state = initialState;
+        this.state = { ...initialState };
         this.broadcastToAllClients({ type: "state", state: this.state });
         return;
       case "forfeit": {
