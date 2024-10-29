@@ -43,6 +43,12 @@ export function InGame() {
     ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
+
+      if (!data.state.isGameStarted) {
+        navigate("/");
+        return;
+      }
+
       setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
       setMeIndex(
         data.state.teams[teamId].players.findIndex(
