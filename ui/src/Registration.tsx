@@ -50,16 +50,17 @@ export function Registration() {
     ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      if (
-        data.type === "state" &&
-        data.state.teams[teamId].players.length > maxPlayersPerTeam
-      ) {
+      if (data.state.teams[teamId].players.length >= maxPlayersPerTeam) {
         alert("This team is full. Please choose another team.");
         navigate("/");
         return;
       }
+
+      ws.dispatch({ type: "joinTeam", teamId, email: ws.id });
+      if (data.state.isGameStarted) {
+        navigate(`/game/${teamId}`);
+      }
     };
-    ws.dispatch({ type: "joinTeam", teamId, email: ws.id });
   }, [ws, teamId, email]);
 
   useEffect(() => {
