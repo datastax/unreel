@@ -3,6 +3,7 @@ import { useParty } from "./PartyContext";
 import { Team, Quote } from "../../common/types";
 import { teamBgColors } from "./util/teamBgColors";
 import { PlayerCount } from "./PlayerCount";
+import { WebSocketResponse } from "../../common/events";
 
 export function Admin() {
   const [teams, setTeams] = useState<Record<string, Team>>({});
@@ -14,42 +15,15 @@ export function Admin() {
   useEffect(() => {
     if (!ws) return;
 
-    ws.dispatch({ type: "getTeams" });
-    ws.dispatch({ type: "getQuotes" });
+    ws.dispatch({ type: "getState" });
 
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      const data = JSON.parse(event.data) as WebSocketResponse;
       switch (data.type) {
-        case "teams":
-        case "playerJoined":
-        case "playerLeft":
-          setTeams(() => data.teams);
-          break;
-        case "quotes":
-        case "gameStarted":
-          setAllQuotes(() => data.quotes);
-          setCurrentQuote(() => data.quotes[data.currentQuoteIndex]);
-          break;
-        case "nextQuote":
-          setCurrentQuote(() => data.quote);
-          break;
-        case "resetGame":
-          window.location.reload();
-          break;
-        case "updateTeamScore":
-          setTeams(() => data.teams);
-          break;
-        case "options":
-          setTeams(() => data.teams);
-          break;
-        case "roundDecided":
-          {
-            const updatedTeams = { ...teams };
-            if (data.teamId) {
-              updatedTeams[data.teamId].score = data.score;
-              setTeams(updatedTeams);
-            }
-          }
+        case "state":
+          setTeams(() => data.state.teams);
+          setAllQuotes(() => data.state.quotes);
+          setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
           break;
       }
     };
@@ -60,9 +34,9 @@ export function Admin() {
       const currentQuoteElement =
         quotesContainerRef.current.querySelector(".border-ds-primary");
       if (currentQuoteElement) {
-        currentQuoteElement.scrollIntoView({
+        currentQuoteElement.scrollTo({
+          left: (currentQuoteElement as HTMLDivElement).offsetLeft,
           behavior: "smooth",
-          inline: "center",
         });
       }
     }

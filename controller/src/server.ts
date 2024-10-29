@@ -1,23 +1,32 @@
 import type * as Party from "partykit/server";
 import { type Option, type Quote, type Team } from "../../common/types";
 import {
+  type GameState,
   type WebSocketAction,
   type WebSocketResponse,
 } from "../../common/events";
 
-export default class Server implements Party.Server {
-  constructor(readonly room: Party.Room) {}
-
-  timeRemaining: number = 60000;
-  quotes: Quote[] = [];
-  teams: Record<string, Team> = {
+const initialState = {
+  timeRemaining: 60000,
+  quotes: [],
+  teams: {
     1: { id: "1", score: 0, players: [] },
     2: { id: "2", score: 0, players: [] },
     3: { id: "3", score: 0, players: [] },
     4: { id: "4", score: 0, players: [] },
-  };
-  currentQuoteIndex: number = 0;
+  },
+  currentQuoteIndex: 0,
+  isGameStarted: false,
+  gameEndedAt: null,
+  teamAnswers: [],
+};
+
+export default class Server implements Party.Server {
+  constructor(readonly room: Party.Room) {}
+
   timeRemainingInterval: NodeJS.Timeout | null = null;
+
+  state: GameState = initialState;
 
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
     console.log(
@@ -31,67 +40,56 @@ export default class Server implements Party.Server {
   onMessage = async (message: string, sender: Party.Connection) => {
     const data = JSON.parse(message) as WebSocketAction;
     switch (data.type) {
-      case "getTeams":
-        this.broadcastToSingleClient(
-          { type: "teams", teams: this.teams },
-          sender.id
-        );
-        return;
-      case "joinTeam":
-        const existingPlayerIndex = this.teams[data.teamId].players.findIndex(
-          (player) => player.email === data.email
-        );
-        if (existingPlayerIndex !== -1) {
-          // Update existing player's id if they reconnect
-          this.teams[data.teamId].players[existingPlayerIndex].id = sender.id;
-        } else {
-          // Add new player if they don't exist
-          this.teams[data.teamId].players.push({
-            id: sender.id,
-            email: data.email,
-            choices: {},
-          });
-        }
-        this.broadcastToAllClients({ type: "playerJoined", teams: this.teams });
-        return;
-      case "leaveTeam":
-        Object.values(this.teams).forEach((team) => {
-          team.players = team.players.filter(
-            (player: Team["players"][number]) => player.id !== data.playerId
-          );
-        });
-        this.broadcastToAllClients({ type: "playerLeft", teams: this.teams });
-        return;
-      case "startGame":
-        this.quotes = await getQuotes();
-        this.currentQuoteIndex = 0;
-        this.startTimer();
-        this.broadcastToAllClients({
-          type: "gameStarted",
-          currentPlayerCounts: Object.fromEntries(
-            Object.entries(this.teams).map(([teamId, team]) => [
-              teamId,
-              team.players.length,
-            ])
-          ),
-          quotes: this.quotes,
-          currentQuoteIndex: this.currentQuoteIndex,
-        });
-        return;
-      case "getQuotes":
+      case "getState":
         this.broadcastToSingleClient(
           {
-            type: "quotes",
-            quotes: this.quotes,
-            currentQuoteIndex: this.currentQuoteIndex,
+            type: "state",
+            state: this.state,
           },
           sender.id
         );
         return;
+      case "joinTeam":
+        const existingPlayerIndex = this.state.teams[
+          data.teamId
+        ].players.findIndex((player) => player.email === data.email);
+        if (existingPlayerIndex !== -1) {
+          // Update existing player's id if they reconnect
+          this.state.teams[data.teamId].players[existingPlayerIndex].id =
+            sender.id;
+        } else {
+          // Add new player if they don't exist
+          this.state.teams[data.teamId].players.push({
+            id: sender.id,
+            email: data.email,
+            phonePosition: "faceUp",
+            choices: {},
+          });
+        }
+        this.broadcastToAllClients({ type: "state", state: this.state });
+        return;
+      case "leaveTeam":
+        Object.values(this.state.teams).forEach((team) => {
+          team.players = team.players.filter(
+            (player: Team["players"][number]) => player.id !== data.playerId
+          );
+        });
+        this.broadcastToAllClients({ type: "state", state: this.state });
+        return;
+      case "startGame":
+        this.state.quotes = await getQuotes();
+        this.state.currentQuoteIndex = 0;
+        this.startTimer();
+        this.state.isGameStarted = true;
+        this.broadcastToAllClients({
+          type: "state",
+          state: this.state,
+        });
+        return;
       case "rejectOption":
       case "acceptOption":
       case "undoOption":
-        const playerIndex = this.teams[data.teamId].players.findIndex(
+        const playerIndex = this.state.teams[data.teamId].players.findIndex(
           (player: Team["players"][number]) => {
             return player.email === data.playerId;
           }
@@ -101,31 +99,51 @@ export default class Server implements Party.Server {
           return;
         }
 
-        this.teams[data.teamId].players[playerIndex].choices[
-          this.currentQuoteIndex
+        this.state.teams[data.teamId].players[playerIndex].choices[
+          this.state.currentQuoteIndex
         ] = data.option;
 
-        this.broadcastToAllClients({
-          type: "options",
-          teams: this.teams,
-        });
+        const previousPhonePosition =
+          this.state.teams[data.teamId].players[playerIndex].phonePosition;
 
-        const team = this.teams[data.teamId];
+        let phonePosition: Team["players"][number]["phonePosition"];
+
+        switch (data.type) {
+          case "rejectOption":
+            phonePosition = "faceDown";
+            break;
+          default:
+            phonePosition = "faceUp";
+            break;
+        }
+
+        if (previousPhonePosition !== phonePosition) {
+          this.state.teams[data.teamId].players[playerIndex].phonePosition =
+            phonePosition;
+          this.broadcastToAllClients({
+            type: "state",
+            state: this.state,
+          });
+        }
+
+        const team = this.state.teams[data.teamId];
         const allDecided = team.players.every(
           (player: Team["players"][number]) =>
-            player.choices[this.currentQuoteIndex] &&
-            player.choices[this.currentQuoteIndex].status !== "undecided"
+            player.choices[this.state.currentQuoteIndex] &&
+            player.choices[this.state.currentQuoteIndex].status !== "undecided"
         );
 
         if (!allDecided) return;
 
         const choices = team.players.map(
           (player: Team["players"][number]) =>
-            player.choices[this.currentQuoteIndex]
+            player.choices[this.state.currentQuoteIndex]
         );
+
         const acceptedCount = choices.filter(
           (choice: Option) => choice.status === "accepted"
         ).length;
+
         const rejectedCount = choices.filter(
           (choice: Option) => choice.status === "rejected"
         ).length;
@@ -135,75 +153,64 @@ export default class Server implements Party.Server {
         }
 
         const correctOption =
-          this.quotes[this.currentQuoteIndex].options[
-            this.quotes[this.currentQuoteIndex].correctOptionIndex
+          this.state.quotes[this.state.currentQuoteIndex].options[
+            this.state.quotes[this.state.currentQuoteIndex].correctOptionIndex
           ];
+
         const acceptedChoice = choices.find(
           (choice: Option) => choice.status === "accepted"
         );
 
+        this.state.teamAnswers[this.state.currentQuoteIndex] = {
+          [data.teamId]: this.state.quotes[
+            this.state.currentQuoteIndex
+          ].options.indexOf(acceptedChoice?.value ?? ""),
+        };
+
         if (acceptedChoice && acceptedChoice.value === correctOption) {
-          console.log({ timeRemaining: data });
-          team.score += this.timeRemaining / 1000;
+          team.score += this.state.timeRemaining / 1000;
           this.broadcastToAllClients({
-            type: "updateTeamScore",
-            teams: this.teams,
+            type: "state",
+            state: this.state,
           });
         }
 
-        if (this.currentQuoteIndex === this.quotes.length - 1) {
-          this.broadcastToAllClients({ type: "gameOver" });
+        if (this.state.currentQuoteIndex === this.state.quotes.length - 1) {
+          this.state.isGameStarted = false;
+          this.state.gameEndedAt = Date.now();
+          this.broadcastToAllClients({ type: "state", state: this.state });
           return;
         }
 
         this.broadcastToAllClients({
-          type: "roundDecided",
-          teamId: data.teamId,
-          score: team.score,
-          lastAnswer: acceptedChoice?.value,
-          correctAnswer: correctOption,
+          type: "state",
+          state: this.state,
         });
         return;
+      case "nextQuote":
+        this.startTimer();
+        this.state.currentQuoteIndex++;
+        this.broadcastToAllClients({ type: "state", state: this.state });
+        return;
+      case "resetGame":
+        this.state = initialState;
+        this.broadcastToAllClients({ type: "state", state: this.state });
+        return;
       case "forfeit": {
-        this.teams[data.teamId].players.forEach(
+        this.state.teams[data.teamId].players.forEach(
           (player: Team["players"][number]) => {
-            player.choices[this.currentQuoteIndex] = {
+            player.choices[this.state.currentQuoteIndex] = {
               value: "Forfeited",
               status: "undecided",
             };
           }
         );
         this.broadcastToAllClients({
-          type: "options",
-          teams: this.teams,
-        });
-        this.broadcastToAllClients({
-          type: "roundDecided",
-          teamId: data.teamId,
-          score: this.teams[data.teamId].score,
-          lastAnswer: "Forfeited",
-          correctAnswer:
-            this.quotes[this.currentQuoteIndex].options[
-              this.quotes[this.currentQuoteIndex].correctOptionIndex
-            ],
+          type: "state",
+          state: this.state,
         });
         return;
       }
-      case "getQuote":
-        this.broadcastToSingleClient(
-          {
-            type: "getQuote",
-            quote: this.quotes[this.currentQuoteIndex],
-          },
-          sender.id
-        );
-        return;
-      case "nextQuote":
-        this.sendNextQuote();
-        return;
-      case "resetGame":
-        this.resetGame();
-        return;
       default:
         console.log("Unknown message type", data);
     }
@@ -218,52 +225,21 @@ export default class Server implements Party.Server {
     );
   };
 
-  sendNextQuote = () => {
-    if (this.currentQuoteIndex === this.quotes.length - 1) {
-      this.broadcastToAllClients({ type: "gameOver" });
-      return;
-    }
-
-    this.startTimer();
-    this.currentQuoteIndex++;
-    const nextQuote = this.quotes[this.currentQuoteIndex];
-    this.broadcastToAllClients({ type: "nextQuote", quote: nextQuote });
-  };
-
-  resetGame = () => {
-    this.teams = {
-      1: { id: "1", score: 0, players: [] },
-      2: { id: "2", score: 0, players: [] },
-      3: { id: "3", score: 0, players: [] },
-      4: { id: "4", score: 0, players: [] },
-    };
-    this.currentQuoteIndex = 0;
-    this.quotes = [];
-    this.broadcastToAllClients({ type: "resetGame" });
-  };
-
   startTimer = () => {
     if (this.timeRemainingInterval) {
       clearInterval(this.timeRemainingInterval);
     }
-    this.timeRemaining = 60000;
+    this.state.timeRemaining = 60000;
     this.timeRemainingInterval = setInterval(() => {
-      this.timeRemaining -= 1000;
-      this.broadcastToAllClients({
-        type: "timeRemaining",
-        timeRemaining: Math.max(this.timeRemaining, 0),
-      });
-
-      if (this.timeRemaining <= 0) {
-        this.broadcastToAllClients({
-          type: "roundDecided",
-          lastAnswer: "Forfeited",
-          correctAnswer:
-            this.quotes[this.currentQuoteIndex].options[
-              this.quotes[this.currentQuoteIndex].correctOptionIndex
-            ],
-        });
+      if (this.state.timeRemaining <= 0) {
+        clearInterval(this.timeRemainingInterval!);
+        return;
       }
+      this.state.timeRemaining -= 1000;
+      this.broadcastToAllClients({
+        type: "state",
+        state: this.state,
+      });
     }, 1000);
   };
 
@@ -300,14 +276,15 @@ const getQuotes = async () => {
       tweaks: {},
     }),
   })
-    .then((res) => res.json())
+    .then((res) => {
+      return res.json();
+    })
     .then((data) => {
       console.dir(data, { depth: Infinity });
       const real = JSON.parse(data.outputs[0].outputs[0].results.text.text);
       const fake = JSON.parse(data.outputs[0].outputs[1].results.text.text);
       return shuffle([...real.quotes, ...fake.quotes]);
     });
-  console.log(quotes);
   return quotes;
 };
 

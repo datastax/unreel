@@ -1,41 +1,25 @@
 import type { Option, Team, Quote } from "./types";
 
 export type WebSocketAction =
-  | { type: "getTeams" }
+  | { type: "getState" }
   | { type: "joinTeam"; teamId: string; email: string }
   | { type: "leaveTeam"; playerId: string }
   | { type: "startGame" }
-  | { type: "getQuotes" }
   | { type: "rejectOption"; teamId: string; option: Option; playerId: string }
   | { type: "acceptOption"; teamId: string; option: Option; playerId: string }
   | { type: "undoOption"; teamId: string; option: Option; playerId: string }
   | { type: "forfeit"; teamId: string }
-  | { type: "getQuote" }
   | { type: "nextQuote" }
   | { type: "resetGame" };
 
-export type WebSocketResponse =
-  | { type: "teams"; teams: Record<string, Team> }
-  | { type: "playerJoined"; teams: Record<string, Team> }
-  | { type: "playerLeft"; teams: Record<string, Team> }
-  | {
-      type: "gameStarted";
-      currentPlayerCounts: Record<string, number>;
-      quotes: Quote[];
-      currentQuoteIndex: number;
-    }
-  | { type: "quotes"; quotes: Quote[]; currentQuoteIndex: number }
-  | { type: "options"; teams: Record<string, Team> }
-  | { type: "updateTeamScore"; teams: Record<string, Team> }
-  | { type: "gameOver" }
-  | {
-      type: "roundDecided";
-      teamId?: string;
-      score?: number;
-      lastAnswer?: string;
-      correctAnswer?: string;
-    }
-  | { type: "getQuote"; quote: Quote }
-  | { type: "nextQuote"; quote: Quote }
-  | { type: "resetGame" }
-  | { type: "timeRemaining"; timeRemaining: number };
+export type GameState = {
+  teams: Record<string, Team>;
+  quotes: Quote[];
+  currentQuoteIndex: number;
+  timeRemaining: number;
+  isGameStarted: boolean;
+  gameEndedAt: number | null;
+  teamAnswers: Record<string, number>[];
+};
+
+export type WebSocketResponse = { type: "state"; state: GameState };

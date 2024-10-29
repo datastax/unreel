@@ -6,7 +6,12 @@ export type Option = {
 export type Team = {
   id: string;
   score: number;
-  players: { id: string; email: string; choices: Record<string, Option> }[];
+  players: {
+    id: string;
+    email: string;
+    phonePosition: "faceUp" | "faceDown";
+    choices: Record<string, Option>;
+  }[];
 };
 
 export type Quote = {
