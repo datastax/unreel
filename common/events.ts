@@ -1,4 +1,4 @@
-import type { Option, Team, Quote, GameState } from "./types";
+import type { Option, GameState } from "./types";
 
 export type WebSocketAction =
   | { type: "getState" }
