@@ -57,14 +57,14 @@ export function InGame() {
       );
       setTimeRemaining(data.state.timeRemaining);
 
-      if (data.state.timeRemaining === 0) {
-        ws.dispatch({ type: "forfeit", teamId });
-      }
-
       const isRoundDecided =
         data.state.timeRemaining === 0 ||
         data.state.teamAnswers?.[data.state.currentQuoteIndex]?.[teamId] !==
           undefined;
+
+      if (!isRoundDecided && data.state.timeRemaining === 0) {
+        ws.dispatch({ type: "forfeit", teamId });
+      }
 
       setIsRoundDecided(isRoundDecided);
 
@@ -179,7 +179,7 @@ export function InGame() {
               <p className="text-xl">This quote:</p>
               <p className="text-2xl font-bold">"{currentQuote.quote}"</p>
             </div>
-            {currentQuote.options[meIndex].toLowerCase() === "ai generated" ? (
+            {currentQuote.options[meIndex]?.toLowerCase() === "ai generated" ? (
               <h1 className="text-xl">
                 Was never said in a movie (AI Generated).
               </h1>

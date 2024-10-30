@@ -56,11 +56,12 @@ export function Registration() {
         return;
       }
 
-      ws.dispatch({ type: "joinTeam", teamId, email: ws.id });
       if (data.state.isGameStarted) {
         navigate(`/game/${teamId}`);
       }
     };
+
+    ws.dispatch({ type: "joinTeam", teamId, email: ws.id });
   }, [ws, teamId, email]);
 
   useEffect(() => {

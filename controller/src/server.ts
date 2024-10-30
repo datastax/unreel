@@ -1,10 +1,5 @@
 import type * as Party from "partykit/server";
-import {
-  type GameState,
-  type Option,
-  type Quote,
-  type Team,
-} from "../../common/types";
+import { type GameState, type Option, type Team } from "../../common/types";
 import {
   type WebSocketAction,
   type WebSocketResponse,
@@ -28,7 +23,7 @@ const initialState = {
 export default class Server implements Party.Server {
   constructor(readonly room: Party.Room) {}
   timeRemainingInterval: NodeJS.Timeout | null = null;
-  state: GameState = initialState;
+  state: GameState = { ...initialState };
 
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
     console.log(
@@ -179,6 +174,7 @@ export default class Server implements Party.Server {
 
         if (this.state.currentQuoteIndex === this.state.quotes.length - 1) {
           this.state.gameEndedAt = Date.now();
+          clearInterval(this.timeRemainingInterval!);
           this.broadcastToAllClients({ type: "state", state: this.state });
           return;
         }
@@ -206,6 +202,9 @@ export default class Server implements Party.Server {
             };
           }
         );
+        this.state.teamAnswers[this.state.currentQuoteIndex] = {
+          [data.teamId]: -1,
+        };
         this.broadcastToAllClients({
           type: "state",
           state: this.state,
