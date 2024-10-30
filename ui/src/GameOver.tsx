@@ -4,6 +4,7 @@ import { useParty } from "./PartyContext";
 import { TeamRoomWrapper } from "./TeamRoomWrapper";
 import { Team } from "../../common/types";
 import { suffixify } from "./util/suffixify";
+import { WebSocketResponse } from "../../common/events";
 
 export function GameOver() {
   const [teams, setTeams] = useState<Record<string, Team>>({});
@@ -22,24 +23,17 @@ export function GameOver() {
   useEffect(() => {
     if (!ws) return;
 
-    ws.dispatch({ type: "getTeams" });
-
+    ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      switch (data.type) {
-        case "teams":
-          setTeams(data.teams);
-          break;
-        case "resetGame":
-          navigate("/");
-          break;
-      }
+      const data = JSON.parse(event.data) as WebSocketResponse;
+      setTeams(data.state.teams);
     };
   }, [ws, navigate]);
 
   const handlePlayAgain = () => {
     if (ws) {
       ws.dispatch({ type: "resetGame" });
+      navigate("/");
     }
   };
 

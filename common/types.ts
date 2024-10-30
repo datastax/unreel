@@ -6,7 +6,12 @@ export type Option = {
 export type Team = {
   id: string;
   score: number;
-  players: { id: string; email: string; choices: Record<string, Option> }[];
+  players: {
+    id: string;
+    email: string;
+    phonePosition: "faceUp" | "faceDown";
+    choices: Record<string, Option>;
+  }[];
 };
 
 export type Quote = {
@@ -15,4 +20,12 @@ export type Quote = {
   correctOptionIndex: number;
 };
 
-export const maxPlayersPerTeam = 4;
+export type GameState = {
+  teams: Record<string, Team>;
+  quotes: Quote[];
+  currentQuoteIndex: number;
+  timeRemaining: number;
+  isGameStarted: boolean;
+  gameEndedAt: number | null;
+  teamAnswers: Record<string, number>[];
+};

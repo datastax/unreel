@@ -3,8 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { PlayerCount } from "./PlayerCount";
 import { useParty } from "./PartyContext";
-import { maxPlayersPerTeam } from "../../common/types";
+import { maxPlayersPerTeam } from "../../common/util";
 import { TeamRoomWrapper } from "./TeamRoomWrapper";
+import { WebSocketResponse } from "../../common/events";
 
 export function TeamRoom() {
   const [currentPlayerCount, setCurrentPlayerCount] = useState(0);
@@ -13,37 +14,27 @@ export function TeamRoom() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!teamId) return;
-    if (currentPlayerCount > maxPlayersPerTeam) {
-      alert("Sorry, your team just got too big! Try again!");
-      navigate("/");
-    }
-  }, [currentPlayerCount, teamId]);
-
-  useEffect(() => {
     if (!ws) return;
     if (!teamId) return;
 
-    ws.dispatch({ type: "getTeams" });
+    ws.dispatch({ type: "getState" });
   }, [ws, teamId]);
 
   useEffect(() => {
     if (!ws) return;
     if (!teamId) return;
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      switch (data.type) {
-        case "playerJoined":
-        case "teams":
-        case "playerLeft":
-          setCurrentPlayerCount(data.teams[teamId].players.length);
-          break;
-        case "gameStarted":
-          if (data.currentPlayerCounts[teamId] === maxPlayersPerTeam) {
-            navigate(`/game/${teamId}`);
-          }
-          break;
+      const data = JSON.parse(event.data) as WebSocketResponse;
+      if (data.state.teams[teamId].players.length > maxPlayersPerTeam) {
+        alert("Sorry, your team just got too big! Try again!");
+        navigate("/");
+        return;
       }
+      if (data.state.isGameStarted) {
+        navigate(`/game/${teamId}`);
+        return;
+      }
+      setCurrentPlayerCount(data.state.teams[teamId].players.length);
     };
   }, [ws, teamId]);
 

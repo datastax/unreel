@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { useParty } from "./PartyContext";
 import { TeamRoomWrapper } from "./TeamRoomWrapper";
+import { maxPlayersPerTeam } from "../../common/util";
+import { WebSocketResponse } from "../../common/events";
 
 export function Registration() {
   const [email, setEmail] = useState("");
@@ -45,6 +47,20 @@ export function Registration() {
   useEffect(() => {
     if (!ws) return;
     if (!teamId) return;
+    ws.dispatch({ type: "getState" });
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data) as WebSocketResponse;
+      if (data.state.teams[teamId].players.length > maxPlayersPerTeam) {
+        alert("This team is full. Please choose another team.");
+        navigate("/");
+        return;
+      }
+
+      if (data.state.isGameStarted) {
+        navigate(`/game/${teamId}`);
+      }
+    };
+
     ws.dispatch({ type: "joinTeam", teamId, email: ws.id });
   }, [ws, teamId, email]);
 

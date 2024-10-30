@@ -5,6 +5,7 @@ import PartySocket from "partysocket";
 import { Quote, Option } from "../../common/types";
 import { TeamRoomWrapper } from "./TeamRoomWrapper";
 import { CountdownCircle } from "./CountdownCircle";
+import { WebSocketResponse } from "../../common/events";
 
 export function InGame() {
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
@@ -39,42 +40,54 @@ export function InGame() {
   useEffect(() => {
     if (!ws) return;
     if (!teamId) return;
-    ws.dispatch({ type: "getTeams" });
-    ws.dispatch({ type: "getQuote" });
+    ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      switch (data.type) {
-        case "teams":
-          {
-            const meIndex = data.teams[teamId].players.findIndex(
-              (p: { email: string }) => p.email === ws.id
-            );
-            setMeIndex(meIndex);
-          }
-          return;
-        case "getQuote":
-        case "nextQuote":
-          setIsRoundDecided(false);
-          setCurrentQuote(data.quote);
-          return;
-        case "gameOver":
-          navigate(`/game-over/${teamId}`);
-          return;
-        case "resetGame":
-          navigate(`/`);
-          return;
-        case "roundDecided":
-          setIsRoundDecided(true);
-          setCurrentQuote(null);
-          setLastRound({
-            lastAnswer: data.lastAnswer,
-            correctAnswer: data.correctAnswer,
-            score: data.score,
-          });
-          return;
-        case "timeRemaining":
-          setTimeRemaining(data.timeRemaining);
-          return;
+      const data = JSON.parse(event.data) as WebSocketResponse;
+
+      if (!data.state.isGameStarted) {
+        navigate("/");
+        return;
+      }
+
+      setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
+      setMeIndex(
+        data.state.teams[teamId].players.findIndex(
+          (p: { email: string }) => p.email === ws.id
+        )
+      );
+      setTimeRemaining(data.state.timeRemaining);
+
+      const isRoundDecided =
+        data.state.timeRemaining === 0 ||
+        data.state.teamAnswers?.[data.state.currentQuoteIndex]?.[teamId] !==
+          undefined;
+
+      if (!isRoundDecided && data.state.timeRemaining === 0) {
+        ws.dispatch({ type: "forfeit", teamId });
+      }
+
+      setIsRoundDecided(isRoundDecided);
+
+      if (isRoundDecided) {
+        // A little hack to reset non-phone devices during local testing on multiple browsers
+        if (!hasMotion) {
+          setPhoneFace("up");
+        }
+
+        setLastRound({
+          lastAnswer:
+            data.state.quotes[data.state.currentQuoteIndex].options[
+              data.state.teamAnswers[data.state.currentQuoteIndex][teamId]
+            ],
+          correctAnswer:
+            data.state.quotes[data.state.currentQuoteIndex].options[
+              data.state.quotes[data.state.currentQuoteIndex].correctOptionIndex
+            ],
+        });
+      }
+
+      if (data.state.gameEndedAt) {
+        navigate(`/game-over/${teamId}`);
       }
     };
   }, [ws, teamId]);
@@ -166,7 +179,7 @@ export function InGame() {
               <p className="text-xl">This quote:</p>
               <p className="text-2xl font-bold">"{currentQuote.quote}"</p>
             </div>
-            {currentQuote.options[meIndex].toLowerCase() === "ai generated" ? (
+            {currentQuote.options[meIndex]?.toLowerCase() === "ai generated" ? (
               <h1 className="text-xl">
                 Was never said in a movie (AI Generated).
               </h1>

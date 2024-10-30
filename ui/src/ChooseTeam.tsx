@@ -4,8 +4,10 @@ import { Link } from "react-router-dom";
 import { PlayerCount } from "./PlayerCount";
 import { teamBgColors } from "./util/teamBgColors";
 import { useParty } from "./PartyContext";
-import { maxPlayersPerTeam, type Team } from "../../common/types";
+import { type Team } from "../../common/types";
+import { maxPlayersPerTeam } from "../../common/util";
 import { DataStax } from "./DataStax";
+import { WebSocketResponse } from "../../common/events";
 
 export function ChooseTeam() {
   const [playersByTeam, setPlayersByTeam] = useState<Record<string, Team>>({});
@@ -19,16 +21,10 @@ export function ChooseTeam() {
 
   useEffect(() => {
     if (!ws) return;
-    ws.dispatch({ type: "getTeams" });
+    ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      switch (data.type) {
-        case "teams":
-        case "playerJoined":
-        case "playerLeft":
-          setPlayersByTeam(data.teams);
-          break;
-      }
+      const data = JSON.parse(event.data) as WebSocketResponse;
+      setPlayersByTeam(data.state.teams);
     };
   }, [ws]);
 

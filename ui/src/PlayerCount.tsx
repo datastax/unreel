@@ -1,4 +1,4 @@
-import { maxPlayersPerTeam } from "../../common/types";
+import { maxPlayersPerTeam } from "../../common/util";
 
 export function PlayerCount({ count }: { count: number }) {
   return (
