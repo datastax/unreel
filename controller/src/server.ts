@@ -86,23 +86,28 @@ export default class Server implements Party.Server {
       case "rejectOption":
       case "acceptOption":
       case "undoOption":
+        // Find the player in the team by their email
         const playerIndex = this.state.teams[data.teamId].players.findIndex(
           (player: Team["players"][number]) => {
             return player.email === data.playerId;
           }
         );
 
+        // Return if player not found
         if (playerIndex === -1) {
           return;
         }
 
+        // Record the player's choice for this round
         this.state.teams[data.teamId].players[playerIndex].choices[
           this.state.currentQuoteIndex
         ] = data.option;
 
+        // Get the player's previous phone position
         const previousPhonePosition =
           this.state.teams[data.teamId].players[playerIndex].phonePosition;
 
+        // Determine new phone position based on action type
         let phonePosition: Team["players"][number]["phonePosition"];
 
         switch (data.type) {
@@ -114,6 +119,7 @@ export default class Server implements Party.Server {
             break;
         }
 
+        // Only broadcast state if phone position changed
         if (previousPhonePosition !== phonePosition) {
           this.state.teams[data.teamId].players[playerIndex].phonePosition =
             phonePosition;
@@ -124,6 +130,28 @@ export default class Server implements Party.Server {
         }
 
         const team = this.state.teams[data.teamId];
+
+        // If all teams have answered and all players are face up, send the next quote
+        const teamsWithPlayers = Object.values(this.state.teams).filter(
+          (team) => team.players.length > 0
+        );
+
+        const allTeamsAnswered =
+          Object.keys(
+            this.state.teamAnswers[this.state.currentQuoteIndex] ?? {}
+          ).length === teamsWithPlayers.length;
+
+        const allPlayersFaceUp = teamsWithPlayers.every((team) =>
+          team.players.every((player) => player.phonePosition === "faceUp")
+        );
+
+        if (allTeamsAnswered && allPlayersFaceUp) {
+          this.sendNextQuote();
+          return;
+        }
+
+        // Else, some teams haven't answered yet
+        // Check if all players in team have made a decision
         const allDecided = team.players.every(
           (player: Team["players"][number]) =>
             player.choices[this.state.currentQuoteIndex] &&
@@ -132,11 +160,13 @@ export default class Server implements Party.Server {
 
         if (!allDecided) return;
 
+        // Get all choices for this round
         const choices = team.players.map(
           (player: Team["players"][number]) =>
             player.choices[this.state.currentQuoteIndex]
         );
 
+        // Count accepted and rejected choices
         const acceptedCount = choices.filter(
           (choice: Option) => choice.status === "accepted"
         ).length;
@@ -145,25 +175,30 @@ export default class Server implements Party.Server {
           (choice: Option) => choice.status === "rejected"
         ).length;
 
+        // Do nothing if not exactly one accepted choice
         if (acceptedCount !== 1 || rejectedCount !== choices.length - 1) {
           return;
         }
 
+        // Get the correct answer for this round
         const correctOption =
           this.state.quotes[this.state.currentQuoteIndex].options[
             this.state.quotes[this.state.currentQuoteIndex].correctOptionIndex
           ];
 
+        // Find the choice that was accepted
         const acceptedChoice = choices.find(
           (choice: Option) => choice.status === "accepted"
         );
 
+        // Record the team's answer for this round
         this.state.teamAnswers[this.state.currentQuoteIndex] = {
           [data.teamId]: this.state.quotes[
             this.state.currentQuoteIndex
           ].options.indexOf(acceptedChoice?.value ?? ""),
         };
 
+        // Award points if answer was correct
         if (acceptedChoice && acceptedChoice.value === correctOption) {
           team.score += this.state.timeRemaining / 1000;
           this.broadcastToAllClients({
@@ -172,6 +207,7 @@ export default class Server implements Party.Server {
           });
         }
 
+        // End game if this was the last quote
         if (this.state.currentQuoteIndex === this.state.quotes.length - 1) {
           this.state.gameEndedAt = Date.now();
           clearInterval(this.timeRemainingInterval!);
@@ -179,15 +215,14 @@ export default class Server implements Party.Server {
           return;
         }
 
+        // Broadcast updated state to all clients
         this.broadcastToAllClients({
           type: "state",
           state: this.state,
         });
         return;
       case "nextQuote":
-        this.startTimer();
-        this.state.currentQuoteIndex++;
-        this.broadcastToAllClients({ type: "state", state: this.state });
+        this.sendNextQuote();
         return;
       case "resetGame":
         this.state = { ...initialState };
@@ -216,13 +251,10 @@ export default class Server implements Party.Server {
     }
   };
 
-  broadcastToSingleClient = (message: WebSocketResponse, clientId: string) => {
-    this.room.broadcast(
-      JSON.stringify(message),
-      Array.from(this.room.getConnections())
-        .filter((c) => c.id !== clientId)
-        .map((c) => c.id)
-    );
+  sendNextQuote = () => {
+    this.startTimer();
+    this.state.currentQuoteIndex++;
+    this.broadcastToAllClients({ type: "state", state: this.state });
   };
 
   startTimer = () => {
@@ -241,6 +273,15 @@ export default class Server implements Party.Server {
         state: this.state,
       });
     }, 1000);
+  };
+
+  broadcastToSingleClient = (message: WebSocketResponse, clientId: string) => {
+    this.room.broadcast(
+      JSON.stringify(message),
+      Array.from(this.room.getConnections())
+        .filter((c) => c.id !== clientId)
+        .map((c) => c.id)
+    );
   };
 
   broadcastToAllClients = (message: WebSocketResponse) => {
