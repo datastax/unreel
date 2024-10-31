@@ -96,7 +96,7 @@ export function InGame() {
     return () => {
       window.removeEventListener("devicemotion", handleMotion);
     };
-  }, [currentQuote]);
+  }, [currentQuote?.correctOptionIndex]);
 
   // Little hack to reset non-phone devices during local testing on multiple browsers
   useEffect(() => {
