@@ -28,11 +28,18 @@ export function InGame() {
     return () => ws.removeEventListener("message", sync);
   }, [ws]);
 
+  const isRoundDecided =
+    gameState &&
+    (gameState.timeRemaining === 0 ||
+      gameState.teamAnswers?.[gameState.currentQuoteIndex]?.[teamId!] !==
+        undefined);
+
   const vote = useCallback(
     (choice: "up" | "down") => {
       if (!ws) return;
       if (!gameState) return;
       if (!teamId) return;
+      if (isRoundDecided) return;
 
       const me = gameState.teams[teamId].players.find(
         (p: { email: string }) => p.email === ws.id
@@ -47,7 +54,7 @@ export function InGame() {
         playerId: ws.id,
       });
     },
-    [ws, teamId, gameState]
+    [ws, teamId, gameState, isRoundDecided]
   );
 
   // Handle motion
@@ -97,11 +104,6 @@ export function InGame() {
       </TeamRoomWrapper>
     );
   }
-
-  const isRoundDecided =
-    gameState.timeRemaining === 0 ||
-    gameState.teamAnswers?.[gameState.currentQuoteIndex]?.[teamId!] !==
-      undefined;
 
   const meIndex =
     ws && gameState.teams[teamId]
