@@ -28,17 +28,26 @@ export function InGame() {
     return () => ws.removeEventListener("message", sync);
   }, [ws]);
 
-  const isRoundDecided =
-    gameState?.timeRemaining === 0 ||
-    gameState?.teamAnswers?.[gameState.currentQuoteIndex]?.[teamId!] !==
-      undefined;
-
   const vote = useCallback(
     (choice: "up" | "down") => {
       if (!ws) return;
       if (!gameState) return;
       if (!teamId) return;
-      if (isRoundDecided) return;
+      // Check if all players have voted
+      const team = gameState.teams[teamId];
+      const allPlayersHaveVoted = team.players.every(
+        (p) => p.phonePosition === "faceUp" || p.phonePosition === "faceDown"
+      );
+
+      // Count accepted votes
+      const acceptedVotes = team.players.filter(
+        (p) => p.phonePosition === "faceUp"
+      ).length;
+
+      // If exactly one accepted and rest rejected, return early
+      if (allPlayersHaveVoted && acceptedVotes === 1) {
+        return;
+      }
 
       const me = gameState.teams[teamId].players.find(
         (p: { email: string }) => p.email === ws.id
@@ -53,7 +62,7 @@ export function InGame() {
         playerId: ws.id,
       });
     },
-    [ws, teamId, gameState, isRoundDecided]
+    [ws, teamId, gameState]
   );
 
   // Handle motion
@@ -103,6 +112,11 @@ export function InGame() {
       </TeamRoomWrapper>
     );
   }
+
+  const isRoundDecided =
+    gameState.timeRemaining === 0 ||
+    gameState.teamAnswers?.[gameState.currentQuoteIndex]?.[teamId!] !==
+      undefined;
 
   const meIndex =
     ws && gameState.teams[teamId]
