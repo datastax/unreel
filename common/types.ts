@@ -9,7 +9,7 @@ export type Team = {
   players: {
     id: string;
     email: string;
-    phonePosition: "faceUp" | "faceDown";
+    phonePosition: "faceUp" | "faceDown" | null;
     choices: Record<string, Option>;
   }[];
 };

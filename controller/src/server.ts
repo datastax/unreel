@@ -210,6 +210,13 @@ export default class Server implements Party.Server {
         };
         this.broadcastToAllClients({ type: "state", state: this.state });
         return;
+      case "resetPhonePosition":
+        Object.values(this.state.teams).forEach((team) => {
+          team.players.forEach((player) => {
+            player.phonePosition = null;
+          });
+        });
+        return;
       case "forfeit": {
         this.state.teams[data.teamId].players.forEach(
           (player: Team["players"][number]) => {

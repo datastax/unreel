@@ -9,6 +9,7 @@ export type WebSocketAction =
   | { type: "acceptOption"; teamId: string; playerId: string }
   | { type: "forfeit"; teamId: string }
   | { type: "nextQuote" }
+  | { type: "resetPhonePosition" }
   | { type: "resetGame" };
 
 export type WebSocketResponse = { type: "state"; state: GameState };

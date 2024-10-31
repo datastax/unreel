@@ -32,7 +32,9 @@ export function InGame() {
     (choice: "up" | "down") => {
       if (!ws) return;
       if (!gameState) return;
-      const me = gameState.teams[teamId!].players.find(
+      if (!teamId) return;
+
+      const me = gameState.teams[teamId].players.find(
         (p: { email: string }) => p.email === ws.id
       );
       if (!me) return;
@@ -41,7 +43,7 @@ export function InGame() {
 
       ws.dispatch({
         type: choice === "up" ? "acceptOption" : "rejectOption",
-        teamId: teamId!,
+        teamId: teamId,
         playerId: ws.id,
       });
     },
@@ -76,11 +78,12 @@ export function InGame() {
 
   // Reset vote per round
   useEffect(() => {
+    if (!gameState) return;
     if (!ws) return;
-    if (gameState?.timeRemaining === roundDurationMs) {
-      vote("up");
+    if (gameState.timeRemaining === roundDurationMs) {
+      ws.dispatch({ type: "resetPhonePosition" });
     }
-  }, [gameState?.timeRemaining, vote]);
+  }, [gameState, ws]);
 
   if (!teamId) {
     navigate("/");
