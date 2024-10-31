@@ -14,6 +14,7 @@ export function InGame() {
   const [isRoundDecided, setIsRoundDecided] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(60000);
   const hasMotion = "requestPermission" in DeviceMotionEvent;
+  const [phoneFace, setPhoneFace] = useState<"faceUp" | "faceDown">("faceUp");
   const [lastRound, setLastRound] = useState<{
     lastAnswer: string;
     correctAnswer: string;
@@ -45,6 +46,12 @@ export function InGame() {
         navigate("/");
         return;
       }
+
+      setPhoneFace(
+        data.state.teams[teamId].players.find(
+          (p: { email: string }) => p.email === ws.id
+        )?.phonePosition ?? "faceUp"
+      );
 
       setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
       setMeIndex(
@@ -93,9 +100,9 @@ export function InGame() {
       const acceleration = e.accelerationIncludingGravity;
 
       if (acceleration?.z && acceleration.z > 5) {
-        vote("down");
+        setPhoneFace("faceDown");
       } else if (acceleration?.z && acceleration.z < -5) {
-        vote("up");
+        setPhoneFace("faceUp");
       }
     };
 
@@ -112,8 +119,8 @@ export function InGame() {
   // Little hack to reset non-phone devices during local testing on multiple browsers
   useEffect(() => {
     if (!ws) return;
-    vote("up");
-  }, [currentQuote?.correctOptionIndex]);
+    vote(phoneFace === "faceUp" ? "up" : "down");
+  }, [currentQuote?.correctOptionIndex, phoneFace]);
 
   if (!teamId) {
     navigate("/");
