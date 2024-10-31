@@ -26,19 +26,20 @@ export function InGame() {
     ws.addEventListener("message", sync);
     return () => ws.removeEventListener("message", sync);
   }, [ws]);
+
   const vote = useCallback(
-    (vote: "up" | "down") => {
+    (choice: "up" | "down") => {
       if (!ws) return;
       if (!gameState) return;
       const me = gameState.teams[teamId!].players.find(
         (p: { email: string }) => p.email === ws.id
       );
       if (!me) return;
-      if (vote === "up" && me.phonePosition === "faceUp") return;
-      if (vote === "down" && me.phonePosition === "faceDown") return;
+      if (choice === "up" && me.phonePosition === "faceUp") return;
+      if (choice === "down" && me.phonePosition === "faceDown") return;
 
       ws.dispatch({
-        type: vote === "up" ? "acceptOption" : "rejectOption",
+        type: choice === "up" ? "acceptOption" : "rejectOption",
         teamId: teamId!,
         playerId: ws.id,
       });
