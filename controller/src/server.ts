@@ -188,7 +188,7 @@ export default class Server implements Party.Server {
           );
 
         if (allTeamsHaveAnswered) {
-          this.sendNextQuote();
+          setTimeout(() => this.sendNextQuote(), 5000);
           return;
         }
 

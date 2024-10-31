@@ -138,7 +138,7 @@ export function InGame() {
     return (
       <TeamRoomWrapper>
         <div className="grid min-h-[calc(100svh-8rem)] gap-4 items-start justify-center">
-          {gameState.teamAnswers[gameState.currentQuoteIndex]?.[teamId] ? (
+          {yourAnswer ? (
             <div className="grid gap-8">
               <h1 className="text-5xl font-bold">
                 {yourAnswer === correctAnswer ? "Correct!" : "Wrong!"}
