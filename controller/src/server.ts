@@ -150,7 +150,13 @@ export default class Server implements Party.Server {
           this.state.quotes[this.state.currentQuoteIndex].correctOptionIndex;
 
         if (isAnswerCorrect) {
-          this.state.teams[data.teamId].score += this.state.timeRemaining;
+          // Add base points for correct answer plus first team bonus
+          const isFirstTeamToAnswer =
+            Object.keys(this.state.teamAnswers[this.state.currentQuoteIndex])
+              .length === 1;
+          const firstTeamBonus = isFirstTeamToAnswer ? 10 : 0;
+          this.state.teams[data.teamId].score +=
+            this.state.timeRemaining / 1000 + firstTeamBonus;
         }
 
         // Send the updated state to the clients

@@ -101,8 +101,9 @@ export function InGame() {
   // Little hack to reset non-phone devices during local testing on multiple browsers
   useEffect(() => {
     if (!ws) return;
+    setPhoneFace("up");
     ws.dispatch({ type: "acceptOption", teamId: teamId!, playerId: ws.id });
-  }, [currentQuote?.options[meIndex]]);
+  }, [currentQuote?.correctOptionIndex]);
 
   useEffect(() => {
     if (!ws) return;
