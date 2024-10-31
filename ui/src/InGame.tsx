@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useParty } from "./PartyContext";
 import { Quote } from "../../common/types";
@@ -13,7 +13,6 @@ export function InGame() {
   const navigate = useNavigate();
   const [isRoundDecided, setIsRoundDecided] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(60000);
-  const [phoneFace, setPhoneFace] = useState<"up" | "down">("up");
   const hasMotion = "requestPermission" in DeviceMotionEvent;
   const [lastRound, setLastRound] = useState<{
     lastAnswer: string;
@@ -22,6 +21,18 @@ export function InGame() {
   } | null>(null);
 
   const { ws } = useParty();
+
+  const vote = useCallback(
+    (vote: "up" | "down") => {
+      if (!ws) return;
+      ws.dispatch({
+        type: vote === "up" ? "acceptOption" : "rejectOption",
+        teamId: teamId!,
+        playerId: ws.id,
+      });
+    },
+    [ws, teamId]
+  );
 
   useEffect(() => {
     if (!ws) return;
@@ -82,9 +93,9 @@ export function InGame() {
       const acceleration = e.accelerationIncludingGravity;
 
       if (acceleration?.z && acceleration.z > 5) {
-        setPhoneFace("down");
+        vote("down");
       } else if (acceleration?.z && acceleration.z < -5) {
-        setPhoneFace("up");
+        vote("up");
       }
     };
 
@@ -101,18 +112,8 @@ export function InGame() {
   // Little hack to reset non-phone devices during local testing on multiple browsers
   useEffect(() => {
     if (!ws) return;
-    setPhoneFace("up");
-    ws.dispatch({ type: "acceptOption", teamId: teamId!, playerId: ws.id });
+    vote("up");
   }, [currentQuote?.correctOptionIndex]);
-
-  useEffect(() => {
-    if (!ws) return;
-    if (phoneFace === "up") {
-      ws.dispatch({ type: "acceptOption", teamId: teamId!, playerId: ws.id });
-    } else {
-      ws.dispatch({ type: "rejectOption", teamId: teamId!, playerId: ws.id });
-    }
-  }, [phoneFace, ws, teamId]);
 
   if (!teamId) {
     navigate("/");
@@ -181,13 +182,13 @@ export function InGame() {
             {!hasMotion && (
               <div className="grid gap-4">
                 <button
-                  onClick={() => setPhoneFace("up")}
+                  onClick={() => vote("up")}
                   className="bg-white text-black p-2 rounded-md"
                 >
                   Accept
                 </button>
                 <button
-                  onClick={() => setPhoneFace("down")}
+                  onClick={() => vote("down")}
                   className="bg-white text-black p-2 rounded-md"
                 >
                   Reject

@@ -105,6 +105,10 @@ export default class Server implements Party.Server {
           status: data.type === "acceptOption" ? "accepted" : "rejected",
         };
 
+        // Update the player's phone face
+        player.phonePosition =
+          data.type === "acceptOption" ? "faceUp" : "faceDown";
+
         // Broadcast the updated state (just for the admin UI)
         this.broadcastToAllClients({
           type: "state",
