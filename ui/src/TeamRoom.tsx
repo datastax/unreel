@@ -6,9 +6,11 @@ import { useParty } from "./PartyContext";
 import { maxPlayersPerTeam } from "../../common/util";
 import { TeamRoomWrapper } from "./TeamRoomWrapper";
 import { WebSocketResponse } from "../../common/events";
+import { Spinner } from "./Spinner";
+import { GameState } from "../../common/types";
 
 export function TeamRoom() {
-  const [currentPlayerCount, setCurrentPlayerCount] = useState(0);
+  const [gameState, setGameState] = useState<GameState | null>(null);
   const { teamId } = useParams();
   const { ws } = useParty();
   const navigate = useNavigate();
@@ -34,7 +36,7 @@ export function TeamRoom() {
         navigate(`/game/${teamId}`);
         return;
       }
-      setCurrentPlayerCount(data.state.teams[teamId].players.length);
+      setGameState(data.state);
     };
   }, [ws, teamId]);
 
@@ -42,6 +44,18 @@ export function TeamRoom() {
     navigate("/");
     return null;
   }
+
+  if (!gameState) {
+    return null;
+  }
+
+  const currentPlayerCount = gameState.teams[teamId!].players.length;
+  const isFirstPlayer = gameState.teams[teamId!].players[0].email === ws?.id;
+  const gameHasOnlyOneTeamWithPlayers =
+    Object.values(gameState.teams).filter((team) => team.players.length > 0)
+      .length === 1;
+  const shouldShowStartGameButton =
+    isFirstPlayer && gameHasOnlyOneTeamWithPlayers;
 
   return (
     <TeamRoomWrapper>
@@ -53,13 +67,24 @@ export function TeamRoom() {
         <li>The only phone on your team facing up is your submitted answer.</li>
         <li>The faster you answer correctly, the higher your score.</li>
       </ul>
-      <div className="text-center mt-auto">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
-        <p className="text-xl">
-          Waiting for{" "}
-          {currentPlayerCount < maxPlayersPerTeam ? "players" : "host"}...
-        </p>
-        <PlayerCount count={currentPlayerCount} />
+      <div className="text-center grid gap-4 mt-auto">
+        <Spinner>
+          <p className="text-xl">
+            Waiting for{" "}
+            {currentPlayerCount < maxPlayersPerTeam ? "players" : "host"}...
+          </p>
+          <PlayerCount count={currentPlayerCount} />
+        </Spinner>
+        {shouldShowStartGameButton && (
+          <div className="grid gap-4">
+            <button
+              onClick={() => ws?.dispatch({ type: "startGame" })}
+              className="bg-white text-black p-4 rounded-md font-bold"
+            >
+              Start Game
+            </button>
+          </div>
+        )}
       </div>
     </TeamRoomWrapper>
   );
