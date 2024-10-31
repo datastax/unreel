@@ -187,8 +187,13 @@ export default class Server implements Party.Server {
               undefined
           );
 
-        if (allTeamsHaveAnswered) {
-          setTimeout(() => this.sendNextQuote(), 5000);
+        const allPhonesAreFaceUp = Object.values(this.state.teams).every(
+          (team) =>
+            team.players.every((player) => player.phonePosition === "faceUp")
+        );
+
+        if (allTeamsHaveAnswered && allPhonesAreFaceUp) {
+          this.sendNextQuote();
           return;
         }
 
@@ -241,6 +246,11 @@ export default class Server implements Party.Server {
   };
 
   sendNextQuote = () => {
+    if (this.state.currentQuoteIndex >= this.state.quotes.length - 1) {
+      this.state.gameEndedAt = Date.now();
+      this.broadcastToAllClients({ type: "state", state: this.state });
+      return;
+    }
     this.startTimer();
     this.state.currentQuoteIndex++;
     this.broadcastToAllClients({ type: "state", state: this.state });
