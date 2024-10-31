@@ -129,11 +129,16 @@ export function InGame() {
       gameState.quotes[gameState.currentQuoteIndex].options[
         gameState.quotes[gameState.currentQuoteIndex].correctOptionIndex
       ];
+    const hasOnlyOneTeamWithPlayers =
+      Object.values(gameState.teams).filter((team) => team.players.length > 0)
+        .length === 1;
+    const shouldShowContinueButton =
+      gameState.timeRemaining === 0 && hasOnlyOneTeamWithPlayers;
 
     return (
       <TeamRoomWrapper>
         <div className="grid min-h-[calc(100svh-8rem)] gap-4 items-start justify-center">
-          {gameState.teamAnswers[gameState.currentQuoteIndex]?.[teamId] && (
+          {gameState.teamAnswers[gameState.currentQuoteIndex]?.[teamId] ? (
             <div className="grid gap-8">
               <h1 className="text-5xl font-bold">
                 {yourAnswer === correctAnswer ? "Correct!" : "Wrong!"}
@@ -153,15 +158,37 @@ export function InGame() {
                 </p>
               </div>
             </div>
+          ) : (
+            <div className="grid gap-8">
+              <h1 className="text-5xl font-bold">Time's up!</h1>
+              <div className="grid gap-1">
+                <p className="text-xl">The correct answer was</p>
+                <p className="text-2xl font-bold">{correctAnswer}</p>
+              </div>
+              <div className="grid gap-1">
+                <p className="text-xl">Your Score</p>
+                <p className="text-2xl font-bold">
+                  {gameState.teams[teamId]?.score ?? "-"}
+                </p>
+              </div>
+            </div>
           )}
-          <Spinner>
-            <>
+          <div className="mt-auto grid gap-4">
+            <Spinner>
               <p className="text-xl mb-2">Waiting for the next quote</p>
               <p className="text-sm text-opacity-50">
                 (waiting for all teams to finish)
               </p>
-            </>
-          </Spinner>
+            </Spinner>
+            {shouldShowContinueButton && (
+              <button
+                onClick={() => ws?.dispatch({ type: "nextQuote" })}
+                className="bg-white text-black p-4 rounded-md font-bold"
+              >
+                Continue
+              </button>
+            )}
+          </div>
         </div>
       </TeamRoomWrapper>
     );
