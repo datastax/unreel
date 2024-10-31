@@ -7,6 +7,7 @@ import { CountdownCircle } from "./CountdownCircle";
 import { WebSocketResponse } from "../../common/events";
 import { GameState } from "../../common/types";
 import { Spinner } from "./Spinner";
+import { roundDurationMs } from "../../common/util";
 
 export function InGame() {
   const hasMotion = "requestPermission" in DeviceMotionEvent;
@@ -73,11 +74,13 @@ export function InGame() {
     };
   }, [vote]);
 
-  // Reset vote when quote changes
+  // Reset vote per round
   useEffect(() => {
     if (!ws) return;
-    vote("up");
-  }, [gameState?.currentQuoteIndex, vote]);
+    if (gameState?.timeRemaining === roundDurationMs) {
+      vote("up");
+    }
+  }, [gameState?.timeRemaining, vote]);
 
   if (!teamId) {
     navigate("/");
@@ -164,7 +167,7 @@ export function InGame() {
   return (
     <TeamRoomWrapper>
       <CountdownCircle
-        timeout={60000}
+        timeout={roundDurationMs}
         remainingTime={gameState.timeRemaining}
       />
       <div className="flex flex-col items-center justify-center">

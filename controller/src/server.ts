@@ -4,9 +4,9 @@ import {
   type WebSocketAction,
   type WebSocketResponse,
 } from "../../common/events";
-
+import { roundDurationMs } from "../../common/util";
 const initialState = {
-  timeRemaining: 60000,
+  timeRemaining: roundDurationMs,
   quotes: [],
   teams: {
     1: { id: "1", score: 0, players: [] },
@@ -243,7 +243,7 @@ export default class Server implements Party.Server {
     if (this.timeRemainingInterval) {
       clearInterval(this.timeRemainingInterval);
     }
-    this.state.timeRemaining = 60000;
+    this.state.timeRemaining = roundDurationMs;
     this.timeRemainingInterval = setInterval(() => {
       if (this.state.timeRemaining <= 0) {
         clearInterval(this.timeRemainingInterval!);
