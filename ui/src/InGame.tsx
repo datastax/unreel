@@ -76,7 +76,7 @@ export function InGame() {
   useEffect(() => {
     if (!ws) return;
     vote("up");
-  }, [gameState?.currentQuoteIndex]);
+  }, [gameState?.currentQuoteIndex, vote]);
 
   if (!teamId) {
     navigate("/");
