@@ -29,10 +29,9 @@ export function InGame() {
   }, [ws]);
 
   const isRoundDecided =
-    gameState &&
-    (gameState.timeRemaining === 0 ||
-      gameState.teamAnswers?.[gameState.currentQuoteIndex]?.[teamId!] !==
-        undefined);
+    gameState?.timeRemaining === 0 ||
+    gameState?.teamAnswers?.[gameState.currentQuoteIndex]?.[teamId!] !==
+      undefined;
 
   const vote = useCallback(
     (choice: "up" | "down") => {
