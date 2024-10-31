@@ -33,7 +33,6 @@ export const PartyProvider = ({ children }: { children: React.ReactNode }) => {
   }) as TypeSafePartySocket;
 
   ws.dispatch = (message: WebSocketAction) => {
-    console.log("sending", message);
     ws.send(JSON.stringify(message));
   };
 
