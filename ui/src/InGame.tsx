@@ -1,27 +1,63 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useParty } from "./PartyContext";
-import { Quote } from "../../common/types";
+
 import { TeamRoomWrapper } from "./TeamRoomWrapper";
 import { CountdownCircle } from "./CountdownCircle";
 import { WebSocketResponse } from "../../common/events";
+import { GameState } from "../../common/types";
+import { Spinner } from "./Spinner";
 
 export function InGame() {
-  const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
-  const [meIndex, setMeIndex] = useState<number>(0);
+  const hasMotion = "requestPermission" in DeviceMotionEvent;
   const { teamId } = useParams();
   const navigate = useNavigate();
-  const [isRoundDecided, setIsRoundDecided] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(60000);
-  const hasMotion = "requestPermission" in DeviceMotionEvent;
-  const [phoneFace, setPhoneFace] = useState<"faceUp" | "faceDown">("faceUp");
-  const [lastRound, setLastRound] = useState<{
-    lastAnswer: string;
-    correctAnswer: string;
-    score?: number;
-  } | null>(null);
-
+  const [gameState, setGameState] = useState<GameState | null>(null);
   const { ws } = useParty();
+
+  // Sync game state
+  useEffect(() => {
+    if (!ws) return () => {};
+    ws.dispatch({ type: "getState" });
+    const sync = (event: MessageEvent) => {
+      const data = JSON.parse(event.data) as WebSocketResponse;
+      setGameState(data.state);
+    };
+    ws.addEventListener("message", sync);
+    return () => ws.removeEventListener("message", sync);
+  }, [ws]);
+
+  // Handle motion
+  useEffect(() => {
+    if (!("requestPermission" in DeviceMotionEvent)) {
+      return;
+    }
+
+    const handleMotion = function (e: DeviceMotionEvent) {
+      const acceleration = e.accelerationIncludingGravity;
+
+      if (acceleration?.z && acceleration.z > 5) {
+        vote("down");
+      } else if (acceleration?.z && acceleration.z < -5) {
+        vote("up");
+      }
+    };
+
+    // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
+    DeviceMotionEvent.requestPermission().then(() => {
+      window.addEventListener("devicemotion", handleMotion);
+    });
+
+    return () => {
+      window.removeEventListener("devicemotion", handleMotion);
+    };
+  }, []);
+
+  // Reset vote when quote changes
+  useEffect(() => {
+    if (!ws) return;
+    vote("up");
+  }, [gameState?.currentQuoteIndex]);
 
   const vote = useCallback(
     (vote: "up" | "down") => {
@@ -35,130 +71,83 @@ export function InGame() {
     [ws, teamId]
   );
 
-  useEffect(() => {
-    if (!ws) return;
-    if (!teamId) return;
-    ws.dispatch({ type: "getState" });
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data) as WebSocketResponse;
-
-      if (!data.state.isGameStarted) {
-        navigate("/");
-        return;
-      }
-
-      setPhoneFace(
-        data.state.teams[teamId].players.find(
-          (p: { email: string }) => p.email === ws.id
-        )?.phonePosition ?? "faceUp"
-      );
-
-      setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
-      setMeIndex(
-        data.state.teams[teamId].players.findIndex(
-          (p: { email: string }) => p.email === ws.id
-        )
-      );
-      setTimeRemaining(data.state.timeRemaining);
-
-      const isRoundDecided =
-        data.state.timeRemaining === 0 ||
-        data.state.teamAnswers?.[data.state.currentQuoteIndex]?.[teamId] !==
-          undefined;
-
-      if (!isRoundDecided && data.state.timeRemaining === 0) {
-        ws.dispatch({ type: "forfeit", teamId });
-      }
-
-      setIsRoundDecided(isRoundDecided);
-
-      if (isRoundDecided) {
-        setLastRound({
-          score: data.state.teams[teamId].score,
-          lastAnswer:
-            data.state.quotes[data.state.currentQuoteIndex].options[
-              data.state.teamAnswers[data.state.currentQuoteIndex][teamId]
-            ],
-          correctAnswer:
-            data.state.quotes[data.state.currentQuoteIndex].options[
-              data.state.quotes[data.state.currentQuoteIndex].correctOptionIndex
-            ],
-        });
-      }
-
-      if (data.state.gameEndedAt) {
-        navigate(`/game-over/${teamId}`);
-      }
-    };
-  }, [ws, teamId]);
-
-  useEffect(() => {
-    if (!("requestPermission" in DeviceMotionEvent)) {
-      return;
-    }
-    const handleMotion = function (e: DeviceMotionEvent) {
-      const acceleration = e.accelerationIncludingGravity;
-
-      if (acceleration?.z && acceleration.z > 5) {
-        setPhoneFace("faceDown");
-      } else if (acceleration?.z && acceleration.z < -5) {
-        setPhoneFace("faceUp");
-      }
-    };
-
-    // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
-    DeviceMotionEvent.requestPermission().then(() => {
-      window.addEventListener("devicemotion", handleMotion);
-    });
-
-    return () => {
-      window.removeEventListener("devicemotion", handleMotion);
-    };
-  }, [currentQuote?.correctOptionIndex]);
-
-  // Little hack to reset non-phone devices during local testing on multiple browsers
-  useEffect(() => {
-    if (!ws) return;
-    vote(phoneFace === "faceUp" ? "up" : "down");
-  }, [currentQuote?.correctOptionIndex, phoneFace]);
-
   if (!teamId) {
     navigate("/");
     return null;
   }
 
-  if (isRoundDecided || timeRemaining === 0) {
+  if (!gameState) {
+    return (
+      <TeamRoomWrapper>
+        <Spinner>Loading...</Spinner>
+      </TeamRoomWrapper>
+    );
+  }
+
+  const isRoundDecided =
+    gameState.timeRemaining === 0 ||
+    gameState.teamAnswers?.[gameState.currentQuoteIndex]?.[teamId!] !==
+      undefined;
+
+  const meIndex =
+    ws && gameState.teams[teamId]
+      ? gameState.teams[teamId!].players.findIndex(
+          (p: { email: string }) => p.email === ws.id
+        )
+      : -1;
+
+  if (!gameState.isGameStarted) {
+    navigate("/");
+    return null;
+  }
+
+  if (gameState.gameEndedAt) {
+    navigate(`/game-over/${teamId}`);
+    return null;
+  }
+
+  if (isRoundDecided || gameState.timeRemaining === 0) {
+    const yourAnswer =
+      gameState.quotes[gameState.currentQuoteIndex].options[
+        gameState.teamAnswers[gameState.currentQuoteIndex]?.[teamId]
+      ];
+    const correctAnswer =
+      gameState.quotes[gameState.currentQuoteIndex].options[
+        gameState.quotes[gameState.currentQuoteIndex].correctOptionIndex
+      ];
+
     return (
       <TeamRoomWrapper>
         <div className="grid min-h-[calc(100svh-8rem)] gap-4 items-start justify-center">
-          {lastRound && (
+          {gameState.teamAnswers[gameState.currentQuoteIndex]?.[teamId] && (
             <div className="grid gap-8">
               <h1 className="text-5xl font-bold">
-                {lastRound.lastAnswer === lastRound.correctAnswer
-                  ? "Correct!"
-                  : "Wrong!"}
+                {yourAnswer === correctAnswer ? "Correct!" : "Wrong!"}
               </h1>
               <div className="grid gap-1">
                 <p className="text-xl">You chose</p>
-                <p className="text-2xl font-bold">{lastRound.lastAnswer}</p>
+                <p className="text-2xl font-bold">{yourAnswer}</p>
               </div>
               <div className="grid gap-1">
                 <p className="text-xl">The correct answer was</p>
-                <p className="text-2xl font-bold">{lastRound.correctAnswer}</p>
+                <p className="text-2xl font-bold">{correctAnswer}</p>
               </div>
               <div className="grid gap-1">
                 <p className="text-xl">Your Score</p>
-                <p className="text-2xl font-bold">{lastRound.score ?? "-"}</p>
+                <p className="text-2xl font-bold">
+                  {gameState.teams[teamId]?.score ?? "-"}
+                </p>
               </div>
             </div>
           )}
-          <div className="mt-auto text-center">
-            <div className="block mx-auto animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4" />
-            <p className="text-xl mb-2">Waiting for the next quote</p>
-            <p className="text-sm text-opacity-50">
-              (waiting for all teams to finish)
-            </p>
-          </div>
+          <Spinner>
+            <>
+              <p className="text-xl mb-2">Waiting for the next quote</p>
+              <p className="text-sm text-opacity-50">
+                (waiting for all teams to finish)
+              </p>
+            </>
+          </Spinner>
         </div>
       </TeamRoomWrapper>
     );
@@ -166,15 +155,22 @@ export function InGame() {
 
   return (
     <TeamRoomWrapper>
-      <CountdownCircle timeout={60000} remainingTime={timeRemaining} />
+      <CountdownCircle
+        timeout={60000}
+        remainingTime={gameState.timeRemaining}
+      />
       <div className="flex flex-col items-center justify-center">
-        {currentQuote && (
+        {gameState.quotes[gameState.currentQuoteIndex] && (
           <div className="grid gap-8">
             <div className="grid gap-4">
               <p className="text-xl">This quote:</p>
-              <p className="text-2xl font-bold">"{currentQuote.quote}"</p>
+              <p className="text-2xl font-bold">
+                "{gameState.quotes[gameState.currentQuoteIndex].quote}"
+              </p>
             </div>
-            {currentQuote.options[meIndex]?.toLowerCase() === "ai generated" ? (
+            {gameState.quotes[gameState.currentQuoteIndex].options[
+              meIndex
+            ]?.toLowerCase() === "ai generated" ? (
               <h1 className="text-xl">
                 Was never said in a movie (AI Generated).
               </h1>
@@ -182,7 +178,11 @@ export function InGame() {
               <div className="grid gap-4">
                 <p className="text-xl">Was said in this movie:</p>
                 <h1 className="text-4xl font-bold">
-                  {currentQuote.options[meIndex]}
+                  {
+                    gameState.quotes[gameState.currentQuoteIndex].options[
+                      meIndex
+                    ]
+                  }
                 </h1>
               </div>
             )}
