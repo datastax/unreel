@@ -62,13 +62,21 @@ export function InGame() {
   const vote = useCallback(
     (vote: "up" | "down") => {
       if (!ws) return;
+      if (!gameState) return;
+      const me = gameState.teams[teamId!].players.find(
+        (p: { email: string }) => p.email === ws.id
+      );
+      if (!me) return;
+      if (vote === "up" && me.phonePosition === "faceUp") return;
+      if (vote === "down" && me.phonePosition === "faceDown") return;
+
       ws.dispatch({
         type: vote === "up" ? "acceptOption" : "rejectOption",
         teamId: teamId!,
         playerId: ws.id,
       });
     },
-    [ws, teamId]
+    [ws, teamId, gameState]
   );
 
   if (!teamId) {
