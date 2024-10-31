@@ -26,6 +26,25 @@ export function InGame() {
     ws.addEventListener("message", sync);
     return () => ws.removeEventListener("message", sync);
   }, [ws]);
+  const vote = useCallback(
+    (vote: "up" | "down") => {
+      if (!ws) return;
+      if (!gameState) return;
+      const me = gameState.teams[teamId!].players.find(
+        (p: { email: string }) => p.email === ws.id
+      );
+      if (!me) return;
+      if (vote === "up" && me.phonePosition === "faceUp") return;
+      if (vote === "down" && me.phonePosition === "faceDown") return;
+
+      ws.dispatch({
+        type: vote === "up" ? "acceptOption" : "rejectOption",
+        teamId: teamId!,
+        playerId: ws.id,
+      });
+    },
+    [ws, teamId, gameState]
+  );
 
   // Handle motion
   useEffect(() => {
@@ -51,33 +70,13 @@ export function InGame() {
     return () => {
       window.removeEventListener("devicemotion", handleMotion);
     };
-  }, []);
+  }, [vote]);
 
   // Reset vote when quote changes
   useEffect(() => {
     if (!ws) return;
     vote("up");
   }, [gameState?.currentQuoteIndex]);
-
-  const vote = useCallback(
-    (vote: "up" | "down") => {
-      if (!ws) return;
-      if (!gameState) return;
-      const me = gameState.teams[teamId!].players.find(
-        (p: { email: string }) => p.email === ws.id
-      );
-      if (!me) return;
-      if (vote === "up" && me.phonePosition === "faceUp") return;
-      if (vote === "down" && me.phonePosition === "faceDown") return;
-
-      ws.dispatch({
-        type: vote === "up" ? "acceptOption" : "rejectOption",
-        teamId: teamId!,
-        playerId: ws.id,
-      });
-    },
-    [ws, teamId, gameState]
-  );
 
   if (!teamId) {
     navigate("/");
