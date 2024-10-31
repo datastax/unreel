@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useParty } from "./PartyContext";
-import PartySocket from "partysocket";
-import { Quote, Option } from "../../common/types";
+import { Quote } from "../../common/types";
 import { TeamRoomWrapper } from "./TeamRoomWrapper";
 import { CountdownCircle } from "./CountdownCircle";
 import { WebSocketResponse } from "../../common/events";
@@ -23,19 +22,6 @@ export function InGame() {
   } | null>(null);
 
   const { ws } = useParty();
-  const vote = useMemo(
-    () =>
-      createVoter({
-        ws,
-        teamId,
-        option: {
-          value: currentQuote?.options[meIndex] ?? "",
-          status: "undecided",
-        },
-        playerId: ws!.id,
-      }),
-    [ws, teamId, currentQuote, meIndex]
-  );
 
   useEffect(() => {
     if (!ws) return;
@@ -69,12 +55,8 @@ export function InGame() {
       setIsRoundDecided(isRoundDecided);
 
       if (isRoundDecided) {
-        // A little hack to reset non-phone devices during local testing on multiple browsers
-        if (!hasMotion) {
-          setPhoneFace("up");
-        }
-
         setLastRound({
+          score: data.state.teams[teamId].score,
           lastAnswer:
             data.state.quotes[data.state.currentQuoteIndex].options[
               data.state.teamAnswers[data.state.currentQuoteIndex][teamId]
@@ -114,18 +96,21 @@ export function InGame() {
     return () => {
       window.removeEventListener("devicemotion", handleMotion);
     };
-  }, [isRoundDecided]);
+  }, [currentQuote]);
+
+  // Little hack to reset non-phone devices during local testing on multiple browsers
+  useEffect(() => {
+    setPhoneFace("up");
+  }, [currentQuote?.options[meIndex]]);
 
   useEffect(() => {
-    if (isRoundDecided) {
-      return;
-    }
+    if (!ws) return;
     if (phoneFace === "up") {
-      vote?.("acceptOption");
+      ws.dispatch({ type: "acceptOption", teamId: teamId!, playerId: ws.id });
     } else {
-      vote?.("rejectOption");
+      ws.dispatch({ type: "rejectOption", teamId: teamId!, playerId: ws.id });
     }
-  }, [phoneFace, vote, isRoundDecided]);
+  }, [phoneFace, ws, teamId]);
 
   if (!teamId) {
     navigate("/");
@@ -225,34 +210,3 @@ export function InGame() {
     </TeamRoomWrapper>
   );
 }
-
-const createVoter = ({
-  ws,
-  teamId,
-  option,
-  playerId,
-}: {
-  ws: PartySocket | null;
-  teamId: string | undefined;
-  option: Option;
-  playerId: string;
-}) => {
-  if (!ws) return;
-  return (type: "rejectOption" | "acceptOption" | "undoOption") =>
-    ws.send(
-      JSON.stringify({
-        type,
-        teamId,
-        option: {
-          ...option,
-          status:
-            type === "undoOption"
-              ? "undecided"
-              : type === "acceptOption"
-              ? "accepted"
-              : "rejected",
-        },
-        playerId,
-      })
-    );
-};

@@ -5,9 +5,8 @@ export type WebSocketAction =
   | { type: "joinTeam"; teamId: string; email: string }
   | { type: "leaveTeam"; playerId: string }
   | { type: "startGame" }
-  | { type: "rejectOption"; teamId: string; option: Option; playerId: string }
-  | { type: "acceptOption"; teamId: string; option: Option; playerId: string }
-  | { type: "undoOption"; teamId: string; option: Option; playerId: string }
+  | { type: "rejectOption"; teamId: string; playerId: string }
+  | { type: "acceptOption"; teamId: string; playerId: string }
   | { type: "forfeit"; teamId: string }
   | { type: "nextQuote" }
   | { type: "resetGame" };

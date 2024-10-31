@@ -23,7 +23,7 @@ const initialState = {
 export default class Server implements Party.Server {
   constructor(readonly room: Party.Room) {}
   timeRemainingInterval: NodeJS.Timeout | null = null;
-  state: GameState = { ...initialState };
+  state: GameState = Object.assign({}, initialState);
 
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
     console.log(
@@ -85,147 +85,119 @@ export default class Server implements Party.Server {
         return;
       case "rejectOption":
       case "acceptOption":
-      case "undoOption":
-        // Find the player in the team by their email
+        // Identify the player
         const playerIndex = this.state.teams[data.teamId].players.findIndex(
-          (player: Team["players"][number]) => {
-            return player.email === data.playerId;
-          }
+          (player) => player.id === data.playerId
         );
 
-        // Return if player not found
-        if (playerIndex === -1) {
+        const player = this.state.teams[data.teamId].players[playerIndex];
+
+        if (!player) {
           return;
         }
 
-        // Record the player's choice for this round
-        this.state.teams[data.teamId].players[playerIndex].choices[
-          this.state.currentQuoteIndex
-        ] = data.option;
-
-        // Get the player's previous phone position
-        const previousPhonePosition =
-          this.state.teams[data.teamId].players[playerIndex].phonePosition;
-
-        // Determine new phone position based on action type
-        let phonePosition: Team["players"][number]["phonePosition"];
-
-        switch (data.type) {
-          case "rejectOption":
-            phonePosition = "faceDown";
-            break;
-          default:
-            phonePosition = "faceUp";
-            break;
-        }
-
-        // Only broadcast state if phone position changed
-        if (previousPhonePosition !== phonePosition) {
-          this.state.teams[data.teamId].players[playerIndex].phonePosition =
-            phonePosition;
-          this.broadcastToAllClients({
-            type: "state",
-            state: this.state,
-          });
-        }
-
-        const team = this.state.teams[data.teamId];
-
-        // If all teams have answered and all players are face up, send the next quote
-        const teamsWithPlayers = Object.values(this.state.teams).filter(
-          (team) => team.players.length > 0
-        );
-
-        const allTeamsAnswered =
-          Object.keys(
-            this.state.teamAnswers[this.state.currentQuoteIndex] ?? {}
-          ).length === teamsWithPlayers.length;
-
-        const allPlayersFaceUp = teamsWithPlayers.every((team) =>
-          team.players.every((player) => player.phonePosition === "faceUp")
-        );
-
-        if (allTeamsAnswered && allPlayersFaceUp) {
-          this.sendNextQuote();
-          return;
-        }
-
-        // Else, some teams haven't answered yet
-        // Check if all players in team have made a decision
-        const allDecided = team.players.every(
-          (player: Team["players"][number]) =>
-            player.choices[this.state.currentQuoteIndex] &&
-            player.choices[this.state.currentQuoteIndex].status !== "undecided"
-        );
-
-        if (!allDecided) return;
-
-        // Get all choices for this round
-        const choices = team.players.map(
-          (player: Team["players"][number]) =>
-            player.choices[this.state.currentQuoteIndex]
-        );
-
-        // Count accepted and rejected choices
-        const acceptedCount = choices.filter(
-          (choice: Option) => choice.status === "accepted"
-        ).length;
-
-        const rejectedCount = choices.filter(
-          (choice: Option) => choice.status === "rejected"
-        ).length;
-
-        // Do nothing if not exactly one accepted choice
-        if (acceptedCount !== 1 || rejectedCount !== choices.length - 1) {
-          return;
-        }
-
-        // Get the correct answer for this round
-        const correctOption =
-          this.state.quotes[this.state.currentQuoteIndex].options[
-            this.state.quotes[this.state.currentQuoteIndex].correctOptionIndex
-          ];
-
-        // Find the choice that was accepted
-        const acceptedChoice = choices.find(
-          (choice: Option) => choice.status === "accepted"
-        );
-
-        // Record the team's answer for this round
-        this.state.teamAnswers[this.state.currentQuoteIndex] = {
-          [data.teamId]: this.state.quotes[
-            this.state.currentQuoteIndex
-          ].options.indexOf(acceptedChoice?.value ?? ""),
+        // Update the player's choice
+        player.choices[this.state.currentQuoteIndex] = {
+          value:
+            this.state.quotes[this.state.currentQuoteIndex].options[
+              playerIndex
+            ],
+          status: data.type === "acceptOption" ? "accepted" : "rejected",
         };
 
-        // Award points if answer was correct
-        if (acceptedChoice && acceptedChoice.value === correctOption) {
-          team.score += this.state.timeRemaining / 1000;
-          this.broadcastToAllClients({
-            type: "state",
-            state: this.state,
-          });
-        }
-
-        // End game if this was the last quote
-        if (this.state.currentQuoteIndex === this.state.quotes.length - 1) {
-          this.state.gameEndedAt = Date.now();
-          clearInterval(this.timeRemainingInterval!);
-          this.broadcastToAllClients({ type: "state", state: this.state });
-          return;
-        }
-
-        // Broadcast updated state to all clients
+        // Broadcast the updated state (just for the admin UI)
         this.broadcastToAllClients({
           type: "state",
           state: this.state,
         });
+
+        // Check if all players have made a choice
+        const allPlayersHaveMadeChoice = Object.values(
+          this.state.teams[data.teamId].players
+        ).every((player) => player.choices[this.state.currentQuoteIndex]);
+
+        if (!allPlayersHaveMadeChoice) {
+          return;
+        }
+
+        // Check for only one accepted choice
+        const playerWithAcceptedChoice = Object.values(
+          this.state.teams[data.teamId].players
+        ).filter(
+          (player) =>
+            player.choices[this.state.currentQuoteIndex].status === "accepted"
+        );
+
+        if (playerWithAcceptedChoice.length !== 1) {
+          return;
+        }
+
+        // Update the team's answer
+        this.state.teamAnswers[this.state.currentQuoteIndex] = {
+          [data.teamId]: this.state.quotes[
+            this.state.currentQuoteIndex
+          ].options.findIndex(
+            (o) =>
+              o ===
+              playerWithAcceptedChoice[0].choices[this.state.currentQuoteIndex]
+                .value
+          ),
+        };
+
+        // Check if the answer is correct
+        const isAnswerCorrect =
+          this.state.teamAnswers[this.state.currentQuoteIndex][data.teamId] ===
+          this.state.quotes[this.state.currentQuoteIndex].correctOptionIndex;
+
+        if (isAnswerCorrect) {
+          this.state.teams[data.teamId].score += this.state.timeRemaining;
+        }
+
+        // Send the updated state to the clients
+        this.broadcastToAllClients({
+          type: "state",
+          state: this.state,
+        });
+
+        if (this.state.currentQuoteIndex === this.state.quotes.length - 1) {
+          this.state.gameEndedAt = Date.now();
+          this.broadcastToAllClients({
+            type: "state",
+            state: this.state,
+          });
+          return;
+        }
+
+        // Check if all teams with players have answered
+        const allTeamsHaveAnswered = Object.values(this.state.teams)
+          .filter((team) => team.players.length > 0)
+          .every(
+            (team) =>
+              this.state.teamAnswers[this.state.currentQuoteIndex][team.id] !==
+              undefined
+          );
+
+        if (allTeamsHaveAnswered) {
+          this.sendNextQuote();
+          return;
+        }
+
         return;
       case "nextQuote":
         this.sendNextQuote();
         return;
       case "resetGame":
-        this.state = { ...initialState };
+        clearInterval(this.timeRemainingInterval!);
+        this.state = Object.assign({}, initialState);
+        this.state.teamAnswers = [];
+        this.state.quotes = [];
+        this.state.currentQuoteIndex = 0;
+        this.state.teams = {
+          1: { id: "1", score: 0, players: [] },
+          2: { id: "2", score: 0, players: [] },
+          3: { id: "3", score: 0, players: [] },
+          4: { id: "4", score: 0, players: [] },
+        };
         this.broadcastToAllClients({ type: "state", state: this.state });
         return;
       case "forfeit": {

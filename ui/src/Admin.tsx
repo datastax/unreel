@@ -7,6 +7,7 @@ import { WebSocketResponse } from "../../common/events";
 
 export function Admin() {
   const [teams, setTeams] = useState<Record<string, Team>>({});
+  const [teamAnswers, setTeamAnswers] = useState<Record<string, number>[]>([]);
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
   const [allQuotes, setAllQuotes] = useState<Quote[]>([]);
   const { ws } = useParty();
@@ -22,6 +23,7 @@ export function Admin() {
       setTeams(() => data.state.teams);
       setAllQuotes(() => data.state.quotes);
       setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
+      setTeamAnswers(() => data.state.teamAnswers);
     };
   }, [ws]);
 
@@ -146,18 +148,18 @@ export function Admin() {
                   {Array.from({ length: allQuotes.length }, (_, roundIndex) => (
                     <li key={roundIndex}>
                       <span className="font-bold">Round {roundIndex + 1}:</span>{" "}
-                      {teamData.players.some(
-                        (player) =>
-                          player.choices[roundIndex]?.status === "accepted"
-                      )
-                        ? (() => {
-                            const acceptedPlayer = teamData.players.find(
+                      {teamAnswers[roundIndex]?.[teamId] !== undefined
+                        ? `${
+                            allQuotes[roundIndex].options[
+                              teamAnswers[roundIndex][teamId]
+                            ]
+                          } (${
+                            teamData.players.find(
                               (player) =>
                                 player.choices[roundIndex]?.status ===
                                 "accepted"
-                            );
-                            return `${acceptedPlayer?.choices[roundIndex]?.value} (${acceptedPlayer?.email})`;
-                          })()
+                            )?.email
+                          })`
                         : "No accepted answer"}
                     </li>
                   ))}
