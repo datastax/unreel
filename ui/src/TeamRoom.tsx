@@ -46,7 +46,11 @@ export function TeamRoom() {
   }
 
   if (!gameState) {
-    return null;
+    return (
+      <TeamRoomWrapper>
+        <Spinner>Loading...</Spinner>
+      </TeamRoomWrapper>
+    );
   }
 
   const currentPlayerCount = gameState.teams[teamId!].players.length;
