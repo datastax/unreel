@@ -68,7 +68,7 @@ export default class Server implements Party.Server {
           this.state.teams[data.teamId].players.push({
             id: sender.id,
             email: data.email,
-            phonePosition: "faceUp",
+            phonePosition: null,
             choices: {},
           });
         }
@@ -84,13 +84,13 @@ export default class Server implements Party.Server {
         return;
       case "startGame":
         this.state.quotes = await getQuotes();
-        this.state.currentQuoteIndex = 0;
-        this.startTimer();
+        this.state.currentQuoteIndex = -1;
         this.state.isGameStarted = true;
-        this.broadcastToAllClients({
-          type: "state",
-          state: this.state,
-        });
+        this.sendNextQuote();
+        return;
+      case "updatePhonePosition":
+        this.state.teams[data.teamId].players[data.playerIndex].phonePosition =
+          data.phonePosition;
         return;
       case "rejectOption":
       case "acceptOption":
@@ -113,10 +113,6 @@ export default class Server implements Party.Server {
             ],
           status: data.type === "acceptOption" ? "accepted" : "rejected",
         };
-
-        // Update the player's phone face
-        player.phonePosition =
-          data.type === "acceptOption" ? "faceUp" : "faceDown";
 
         // Broadcast the updated state (just for the admin UI)
         this.broadcastToAllClients({
@@ -206,13 +202,6 @@ export default class Server implements Party.Server {
         };
         this.broadcastToAllClients({ type: "state", state: this.state });
         return;
-      case "resetPhonePosition":
-        Object.values(this.state.teams).forEach((team) => {
-          team.players.forEach((player) => {
-            player.phonePosition = null;
-          });
-        });
-        return;
       case "forfeit": {
         this.state.teams[data.teamId].players.forEach(
           (player: Team["players"][number]) => {
@@ -237,13 +226,27 @@ export default class Server implements Party.Server {
   };
 
   sendNextQuote = () => {
+    this.isNextRoundQueued = false;
+    const nextQuoteIndex = this.state.currentQuoteIndex + 1;
+
+    // Set all players to accept the next quote
+    Object.values(this.state.teams).forEach((team) => {
+      team.players.forEach((player, index) => {
+        player.choices[nextQuoteIndex] = {
+          value: this.state.quotes[nextQuoteIndex].options[index],
+          status: "accepted",
+        };
+      });
+    });
+
     if (this.state.currentQuoteIndex >= this.state.quotes.length - 1) {
       this.state.gameEndedAt = Date.now();
       this.broadcastToAllClients({ type: "state", state: this.state });
       return;
     }
+
     this.startTimer();
-    this.state.currentQuoteIndex++;
+    this.state.currentQuoteIndex = nextQuoteIndex;
     this.broadcastToAllClients({ type: "state", state: this.state });
   };
 
@@ -295,11 +298,23 @@ export default class Server implements Party.Server {
       return;
     }
 
-    if (this.state.isRoundDecided) {
+    const allPhonesAreFaceUp = Object.values(this.state.teams).every((team) =>
+      team.players.every((player) => player.phonePosition === "faceUp")
+    );
+
+    if (this.state.isRoundDecided && !allPhonesAreFaceUp) {
+      return;
+    }
+
+    if (this.state.isRoundDecided && allPhonesAreFaceUp) {
       this.isNextRoundQueued = true;
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      // await new Promise((resolve) => setTimeout(resolve, 5000));
       this.state.isRoundDecided = false;
       this.sendNextQuote();
+      return;
+    }
+
+    if (this.state.isRoundDecided) {
       return;
     }
 
@@ -335,30 +350,33 @@ function shuffle(array: Array<any>) {
 }
 
 const getQuotes = async () => {
-  return fallbackQuotes;
-  const quotes = await fetch(process.env.LANGFLOW_API_URL!, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      input_value: "10",
-      output_type: "chat",
-      input_type: "chat",
-      tweaks: {},
-    }),
-  })
-    .then((res) => {
-      return res.json();
+  try {
+    const quotes = await fetch(process.env.LANGFLOW_API_URL!, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input_value: "10",
+        output_type: "chat",
+        input_type: "chat",
+        tweaks: {},
+      }),
     })
-    .then((data) => {
-      console.dir(data, { depth: Infinity });
-      const real = JSON.parse(data.outputs[0].outputs[0].results.text.text);
-      const fake = JSON.parse(data.outputs[0].outputs[1].results.text.text);
-      return shuffle([...real.quotes, ...fake.quotes]);
-    });
-  return quotes;
+      .then((res) => {
+        return res.json();
+      })
+      .then((data) => {
+        console.dir(data, { depth: Infinity });
+        const real = JSON.parse(data.outputs[0].outputs[0].results.text.text);
+        const fake = JSON.parse(data.outputs[0].outputs[1].results.text.text);
+        return shuffle([...real.quotes, ...fake.quotes]);
+      });
+    return quotes;
+  } catch {
+    return fallbackQuotes;
+  }
 };
 
 Server satisfies Party.Worker;

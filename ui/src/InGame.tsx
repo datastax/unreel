@@ -16,11 +16,6 @@ export function InGame() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const { ws } = useParty();
 
-  const isRoundDecided =
-    gameState?.timeRemaining === 0 ||
-    gameState?.teamAnswers?.[gameState.currentQuoteIndex]?.[teamId!] !==
-      undefined;
-
   // Sync game state
   useEffect(() => {
     if (!ws) return () => {};
@@ -39,18 +34,22 @@ export function InGame() {
       if (!gameState) return;
       if (!teamId) return;
 
-      // If exactly one accepted and rest rejected, return early
-      if (
-        gameState.teamAnswers[gameState.currentQuoteIndex]?.[teamId] !==
-        undefined
-      ) {
-        return;
-      }
+      ws.dispatch({
+        type: "updatePhonePosition",
+        teamId,
+        playerIndex: meIndex,
+        phonePosition: choice === "up" ? "faceUp" : "faceDown",
+      });
+
+      if (gameState.gameEndedAt) return;
+      if (gameState.isRoundDecided) return;
 
       const me = gameState.teams[teamId].players.find(
         (p: { email: string }) => p.email === ws.id
       );
+
       if (!me) return;
+
       if (choice === "up" && me.phonePosition === "faceUp") return;
       if (choice === "down" && me.phonePosition === "faceDown") return;
 
@@ -88,18 +87,6 @@ export function InGame() {
       window.removeEventListener("devicemotion", handleMotion);
     };
   }, [vote]);
-
-  // Reset vote per round
-  useEffect(() => {
-    if (!gameState) return;
-    if (!ws) return;
-    if (!isRoundDecided) {
-      ws.dispatch({ type: "acceptOption", teamId: teamId!, playerId: ws.id });
-    }
-    if (isRoundDecided) {
-      ws.dispatch({ type: "resetPhonePosition" });
-    }
-  }, [gameState, ws, isRoundDecided, teamId]);
 
   useEffect(() => {
     if (!teamId) {
@@ -141,7 +128,7 @@ export function InGame() {
         )
       : -1;
 
-  if (isRoundDecided || gameState.timeRemaining === 0) {
+  if (gameState.isRoundDecided || gameState.timeRemaining === 0) {
     const yourAnswer =
       gameState.quotes[gameState.currentQuoteIndex].options[
         gameState.teamAnswers[gameState.currentQuoteIndex]?.[teamId]
@@ -208,6 +195,23 @@ export function InGame() {
               >
                 Continue
               </button>
+            )}
+            {!hasMotion && (
+              <div className="grid gap-4">
+                <button
+                  onClick={() =>
+                    ws?.dispatch({
+                      type: "updatePhonePosition",
+                      phonePosition: "faceUp",
+                      playerIndex: meIndex,
+                      teamId,
+                    })
+                  }
+                  className="bg-white text-black p-2 rounded-md"
+                >
+                  Face Up
+                </button>
+              </div>
             )}
           </div>
         </div>
