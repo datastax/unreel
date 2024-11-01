@@ -24,6 +24,7 @@ export type GameState = {
   teams: Record<string, Team>;
   quotes: Quote[];
   currentQuoteIndex: number;
+  isRoundDecided: boolean;
   timeRemaining: number;
   isGameStarted: boolean;
   gameEndedAt: number | null;

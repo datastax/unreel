@@ -5,7 +5,8 @@ import {
   type WebSocketResponse,
 } from "../../common/events";
 import { fallbackQuotes, roundDurationMs } from "../../common/util";
-const initialState = {
+
+const initialState: GameState = {
   timeRemaining: roundDurationMs,
   quotes: [],
   teams: {
@@ -14,6 +15,7 @@ const initialState = {
     3: { id: "3", score: 0, players: [] },
     4: { id: "4", score: 0, players: [] },
   },
+  isRoundDecided: false,
   currentQuoteIndex: 0,
   isGameStarted: false,
   gameEndedAt: null,
@@ -21,9 +23,16 @@ const initialState = {
 };
 
 export default class Server implements Party.Server {
-  constructor(readonly room: Party.Room) {}
   timeRemainingInterval: NodeJS.Timeout | null = null;
+  roundCheckerInterval: NodeJS.Timeout | null = null;
+  isNextRoundQueued: boolean = false;
   state: GameState = Object.assign({}, initialState);
+
+  constructor(readonly room: Party.Room) {
+    this.roundCheckerInterval = setInterval(() => {
+      this.checkRound();
+    }, 1000);
+  }
 
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
     console.log(
@@ -178,27 +187,9 @@ export default class Server implements Party.Server {
           return;
         }
 
-        // Check if all teams with players have answered
-        const allTeamsHaveAnswered = Object.values(this.state.teams)
-          .filter((team) => team.players.length > 0)
-          .every(
-            (team) =>
-              this.state.teamAnswers[this.state.currentQuoteIndex][team.id] !==
-              undefined
-          );
-
-        const allPhonesAreFaceUp = Object.values(this.state.teams).every(
-          (team) =>
-            team.players.every((player) => player.phonePosition === "faceUp")
-        );
-
-        if (allTeamsHaveAnswered && allPhonesAreFaceUp) {
-          this.sendNextQuote();
-          return;
-        }
-
         return;
       case "nextQuote":
+        this.isNextRoundQueued = false;
         this.sendNextQuote();
         return;
       case "resetGame":
@@ -285,6 +276,47 @@ export default class Server implements Party.Server {
 
   broadcastToAllClients = (message: WebSocketResponse) => {
     this.room.broadcast(JSON.stringify(message));
+  };
+
+  checkRound = async () => {
+    if (!this.state.isGameStarted) {
+      return;
+    }
+
+    if (this.state.gameEndedAt) {
+      return;
+    }
+
+    if (this.state.currentQuoteIndex >= this.state.quotes.length - 1) {
+      return;
+    }
+
+    if (this.isNextRoundQueued) {
+      return;
+    }
+
+    if (this.state.isRoundDecided) {
+      this.isNextRoundQueued = true;
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      this.state.isRoundDecided = false;
+      this.sendNextQuote();
+      return;
+    }
+
+    const teamsThatHavePlayers = Object.values(this.state.teams).filter(
+      (team) => team.players.length > 0
+    );
+
+    if (
+      teamsThatHavePlayers.every(
+        (team) =>
+          this.state.teamAnswers[this.state.currentQuoteIndex][team.id] !==
+          undefined
+      )
+    ) {
+      this.state.isRoundDecided = true;
+      this.broadcastToAllClients({ type: "state", state: this.state });
+    }
   };
 }
 
