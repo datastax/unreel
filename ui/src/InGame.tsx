@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useParty } from "./PartyContext";
 
@@ -10,10 +10,10 @@ import { Spinner } from "./Spinner";
 import { roundDurationMs } from "../../common/util";
 
 export function InGame() {
-  const hasMotion = "requestPermission" in DeviceMotionEvent;
   const { teamId } = useParams();
   const navigate = useNavigate();
   const [gameState, setGameState] = useState<GameState | null>(null);
+  const hasMotion = useRef("requestPermission" in DeviceMotionEvent);
   const { ws } = useParty();
 
   // Sync game state
@@ -64,7 +64,7 @@ export function InGame() {
 
   // Handle motion
   useEffect(() => {
-    if (!("requestPermission" in DeviceMotionEvent)) {
+    if (!hasMotion.current) {
       return;
     }
 
@@ -86,7 +86,7 @@ export function InGame() {
     return () => {
       window.removeEventListener("devicemotion", handleMotion);
     };
-  }, [vote]);
+  }, [vote, hasMotion.current]);
 
   useEffect(() => {
     if (!teamId) {
@@ -113,13 +113,17 @@ export function InGame() {
     );
   }
 
-  if (!teamId) {
+  if (!teamId || !ws) {
     return (
       <TeamRoomWrapper>
         <Spinner>Loading...</Spinner>
       </TeamRoomWrapper>
     );
   }
+
+  hasMotion.current =
+    gameState.teams[teamId].players.find((p) => p.email === ws.id)?.hasMotion ??
+    false;
 
   const meIndex =
     ws && gameState.teams[teamId]
@@ -196,7 +200,7 @@ export function InGame() {
                 Continue
               </button>
             )}
-            {!hasMotion && (
+            {!hasMotion.current && (
               <div className="grid gap-4">
                 <button
                   onClick={() =>
@@ -209,7 +213,7 @@ export function InGame() {
                   }
                   className="bg-white text-black p-2 rounded-md"
                 >
-                  Face Up
+                  Ready Up
                 </button>
               </div>
             )}
@@ -252,34 +256,36 @@ export function InGame() {
                 </h1>
               </div>
             )}
-            {!hasMotion && (
+            {!hasMotion.current && (
               <div className="grid gap-4">
                 <button
                   onClick={() => vote("up")}
                   className="bg-white text-black p-2 rounded-md"
                 >
-                  Accept
+                  True
                 </button>
                 <button
                   onClick={() => vote("down")}
                   className="bg-white text-black p-2 rounded-md"
                 >
-                  Reject
+                  False
                 </button>
               </div>
             )}
-            <div className="grid gap-4">
-              <p className="text-xl font-bold">How to Play</p>
-              <ul className="grid list-disc mx-4 gap-1">
-                <li>Discuss with your team if this is correct.</li>
-                <li>
-                  If <strong>incorrect</strong>, turn your phone face down.
-                </li>
-                <li>
-                  If <strong>correct</strong>, leave your phone face up.
-                </li>
-              </ul>
-            </div>
+            {hasMotion.current && (
+              <div className="grid gap-4">
+                <p className="text-xl font-bold">How to Play</p>
+                <ul className="grid list-disc mx-4 gap-1">
+                  <li>Discuss with your team if this is correct.</li>
+                  <li>
+                    If <strong>incorrect</strong>, turn your phone face down.
+                  </li>
+                  <li>
+                    If <strong>correct</strong>, leave your phone face up.
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </div>

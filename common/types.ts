@@ -11,6 +11,7 @@ export type Team = {
     email: string;
     phonePosition: "faceUp" | "faceDown" | null;
     choices: Record<string, Option>;
+    hasMotion: boolean;
   }[];
 };
 

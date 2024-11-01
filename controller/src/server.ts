@@ -73,6 +73,7 @@ export default class Server implements Party.Server {
             email: data.email,
             phonePosition: null,
             choices: {},
+            hasMotion: data.hasMotion,
           });
         }
         this.broadcastToAllClients({ type: "state", state: this.state });

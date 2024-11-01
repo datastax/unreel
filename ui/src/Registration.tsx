@@ -14,23 +14,29 @@ export function Registration() {
   const navigate = useNavigate();
 
   const requestPermission = async () => {
+    let hasMotion = false;
     // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
     if (typeof DeviceMotionEvent.requestPermission !== "function") {
-      return;
+      return false;
     }
 
     // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
-    return DeviceMotionEvent.requestPermission()
+    await DeviceMotionEvent.requestPermission()
       .then((permissionState: PermissionState) => {
         if (permissionState !== "granted") {
+          hasMotion = false;
           alert(
             "Failed to get permission. You need to allow motion tracking to play the game."
           );
+          return false;
         }
+        hasMotion = true;
       })
       .catch((e: Error) => {
         alert("Failed to get permission: " + e.message);
+        hasMotion = false;
       });
+    return hasMotion;
   };
 
   const validateEmail = (email: string) => {
@@ -76,14 +82,14 @@ export function Registration() {
     if (!teamId) return;
     if (!isValid) return;
     if (!ws) return;
-    await requestPermission();
+    const hasMotion = await requestPermission();
     try {
       localStorage.setItem("email", email);
       // eslint-disable-next-line no-empty
     } catch {}
     ws.updateProperties({ id: email });
     ws.reconnect();
-    ws.dispatch({ type: "joinTeam", teamId, email: ws.id });
+    ws.dispatch({ type: "joinTeam", teamId, email: ws.id, hasMotion });
     setTimeout(() => navigate(`/team/${teamId}`), 1);
   };
 
