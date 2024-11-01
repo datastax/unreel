@@ -60,8 +60,6 @@ export function Registration() {
         navigate(`/game/${teamId}`);
       }
     };
-
-    ws.dispatch({ type: "joinTeam", teamId, email: ws.id });
   }, [ws, teamId, email]);
 
   useEffect(() => {
@@ -76,17 +74,17 @@ export function Registration() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!teamId) return;
-    if (isValid) {
-      await requestPermission();
-      if (!ws) return;
-      try {
-        localStorage.setItem("email", email);
-        // eslint-disable-next-line no-empty
-      } catch {}
-      ws.updateProperties({ id: email });
-      ws.reconnect();
-      navigate(`/team/${teamId}`);
-    }
+    if (!isValid) return;
+    if (!ws) return;
+    await requestPermission();
+    try {
+      localStorage.setItem("email", email);
+      // eslint-disable-next-line no-empty
+    } catch {}
+    ws.updateProperties({ id: email });
+    ws.reconnect();
+    ws.dispatch({ type: "joinTeam", teamId, email: ws.id });
+    navigate(`/team/${teamId}`);
   };
 
   useEffect(() => {

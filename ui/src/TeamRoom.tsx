@@ -40,6 +40,7 @@ export function TeamRoom() {
   }, [ws, teamId]);
 
   useEffect(() => {
+    if (!ws) return;
     if (!teamId) {
       navigate("/");
       return;
@@ -47,7 +48,11 @@ export function TeamRoom() {
 
     if (!gameState) return;
 
-    if (!gameState?.teams[teamId]?.players.find((p) => p.email === ws?.id)) {
+    const isPlayerInTeam = gameState.teams[teamId].players.find(
+      (p) => p.email === ws.id
+    );
+
+    if (!isPlayerInTeam) {
       navigate("/");
     }
   }, [ws, teamId, gameState]);
