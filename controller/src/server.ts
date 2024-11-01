@@ -1,10 +1,12 @@
 import type * as Party from "partykit/server";
-import { type GameState, type Option, type Team } from "../../common/types";
+import { type GameState, type Team } from "../../common/types";
 import {
   type WebSocketAction,
   type WebSocketResponse,
 } from "../../common/events";
-import { fallbackQuotes, roundDurationMs } from "../../common/util";
+import { roundDurationMs } from "../../common/util";
+import { getQuotes } from "./util/getQuotes";
+import { ensureCorrectAnswerInClampedOptionset } from "./util/ensureCorrectAnswerInClampedOptionset";
 
 const initialState: GameState = {
   timeRemaining: roundDurationMs,
@@ -83,7 +85,14 @@ export default class Server implements Party.Server {
         this.broadcastToAllClients({ type: "state", state: this.state });
         return;
       case "startGame":
-        this.state.quotes = await getQuotes();
+        this.state.quotes = ensureCorrectAnswerInClampedOptionset(
+          await getQuotes(),
+          Math.max(
+            ...Object.values(this.state.teams).map(
+              (team) => team.players.length
+            )
+          )
+        );
         this.state.currentQuoteIndex = -1;
         this.state.isGameStarted = true;
         this.sendNextQuote();
@@ -338,49 +347,5 @@ export default class Server implements Party.Server {
     }
   };
 }
-
-function shuffle(array: Array<any>) {
-  for (let i = array.length - 1; i > 0; i--) {
-    let j = Math.floor(Math.random() * (i + 1)); // random index from 0 to i
-
-    // swap elements array[i] and array[j]
-    // we use "destructuring assignment" syntax to achieve that
-    // you'll find more details about that syntax in later chapters
-    // same can be written as:
-    // let t = array[i]; array[i] = array[j]; array[j] = t
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
-const getQuotes = async () => {
-  try {
-    const quotes = await fetch(process.env.LANGFLOW_API_URL!, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        input_value: "10",
-        output_type: "chat",
-        input_type: "chat",
-        tweaks: {},
-      }),
-    })
-      .then((res) => {
-        return res.json();
-      })
-      .then((data) => {
-        console.dir(data, { depth: Infinity });
-        const real = JSON.parse(data.outputs[0].outputs[0].results.text.text);
-        const fake = JSON.parse(data.outputs[0].outputs[1].results.text.text);
-        return shuffle([...real.quotes, ...fake.quotes]);
-      });
-    return quotes;
-  } catch {
-    return fallbackQuotes;
-  }
-};
 
 Server satisfies Party.Worker;
