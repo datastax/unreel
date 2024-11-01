@@ -28,6 +28,7 @@ export default class Server implements Party.Server {
   timeRemainingInterval: NodeJS.Timeout | null = null;
   roundCheckerInterval: NodeJS.Timeout | null = null;
   isNextRoundQueued: boolean = false;
+  isGameStartedQueued: boolean = false;
   state: GameState = Object.assign({}, initialState);
 
   constructor(readonly room: Party.Room) {
@@ -85,6 +86,10 @@ export default class Server implements Party.Server {
         this.broadcastToAllClients({ type: "state", state: this.state });
         return;
       case "startGame":
+        if (this.isGameStartedQueued) {
+          return;
+        }
+        this.isGameStartedQueued = true;
         this.state.quotes = ensureCorrectAnswerInClampedOptionset(
           await getQuotes(),
           Math.max(
@@ -95,6 +100,7 @@ export default class Server implements Party.Server {
         );
         this.state.currentQuoteIndex = -1;
         this.state.isGameStarted = true;
+        this.isGameStartedQueued = false;
         this.sendNextQuote();
         return;
       case "updatePhonePosition":
