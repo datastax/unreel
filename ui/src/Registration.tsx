@@ -84,7 +84,7 @@ export function Registration() {
     ws.updateProperties({ id: email });
     ws.reconnect();
     ws.dispatch({ type: "joinTeam", teamId, email: ws.id });
-    navigate(`/team/${teamId}`);
+    setTimeout(() => navigate(`/team/${teamId}`), 1);
   };
 
   useEffect(() => {
