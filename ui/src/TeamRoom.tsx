@@ -10,6 +10,7 @@ import { Spinner } from "./Spinner";
 import { GameState } from "../../common/types";
 
 export function TeamRoom() {
+  const [isGameStarting, setIsGameStarting] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const { teamId } = useParams();
   const { ws } = useParty();
@@ -84,10 +85,14 @@ export function TeamRoom() {
           {shouldShowStartGameButton && (
             <div className="grid gap-4">
               <button
-                onClick={() => ws?.dispatch({ type: "startGame" })}
-                className="bg-white text-black p-4 rounded-md font-bold"
+                disabled={isGameStarting}
+                onClick={() => {
+                  setIsGameStarting(true);
+                  ws?.dispatch({ type: "startGame" });
+                }}
+                className="bg-white disabled:opacity-50 text-black p-4 rounded-md font-bold"
               >
-                Start Game
+                {isGameStarting ? "Starting..." : "Start Game"}
               </button>
             </div>
           )}
