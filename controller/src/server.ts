@@ -4,7 +4,7 @@ import {
   type WebSocketAction,
   type WebSocketResponse,
 } from "../../common/events";
-import { roundDurationMs } from "../../common/util";
+import { fallbackQuotes, roundDurationMs } from "../../common/util";
 const initialState = {
   timeRemaining: roundDurationMs,
   quotes: [],
@@ -303,6 +303,7 @@ function shuffle(array: Array<any>) {
 }
 
 const getQuotes = async () => {
+  return fallbackQuotes;
   const quotes = await fetch(process.env.LANGFLOW_API_URL!, {
     method: "POST",
     headers: {
