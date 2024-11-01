@@ -121,37 +121,41 @@ export default class Server implements Party.Server {
         });
 
         // Check if all players have made a choice
-        const allPlayersHaveMadeChoice = Object.values(
-          this.state.teams[data.teamId].players
-        ).every((player) => player.choices[this.state.currentQuoteIndex]);
+        const allPlayersHaveMadeChoice = this.state.teams[
+          data.teamId
+        ].players.every(
+          (player) => player.choices[this.state.currentQuoteIndex]
+        );
 
         if (!allPlayersHaveMadeChoice) {
           return;
         }
 
-        // Check for only one accepted choice
-        const playerWithAcceptedChoice = Object.values(
-          this.state.teams[data.teamId].players
-        ).filter(
-          (player) =>
-            player.choices[this.state.currentQuoteIndex].status === "accepted"
-        );
+        // Check each team for exactly one accepted choice and update answers
+        Object.values(this.state.teams).forEach((team) => {
+          const playersWithAcceptedChoice = team.players.filter(
+            (player) =>
+              player.choices[this.state.currentQuoteIndex]?.status ===
+              "accepted"
+          );
 
-        if (playerWithAcceptedChoice.length !== 1) {
-          return;
-        }
+          if (playersWithAcceptedChoice.length === 1) {
+            // Found team with exactly one accepted choice
+            if (!this.state.teamAnswers[this.state.currentQuoteIndex]) {
+              this.state.teamAnswers[this.state.currentQuoteIndex] = {};
+            }
 
-        // Update the team's answer
-        this.state.teamAnswers[this.state.currentQuoteIndex] = {
-          [data.teamId]: this.state.quotes[
-            this.state.currentQuoteIndex
-          ].options.findIndex(
-            (o) =>
-              o ===
-              playerWithAcceptedChoice[0].choices[this.state.currentQuoteIndex]
-                .value
-          ),
-        };
+            // Update that team's answer
+            this.state.teamAnswers[this.state.currentQuoteIndex][team.id] =
+              this.state.quotes[this.state.currentQuoteIndex].options.findIndex(
+                (option) =>
+                  option ===
+                  playersWithAcceptedChoice[0].choices[
+                    this.state.currentQuoteIndex
+                  ].value
+              );
+          }
+        });
 
         // Check if the answer is correct
         const isAnswerCorrect =
@@ -298,9 +302,9 @@ export default class Server implements Party.Server {
       return;
     }
 
-    const allPhonesAreFaceUp = Object.values(this.state.teams).every((team) =>
-      team.players.every((player) => player.phonePosition === "faceUp")
-    );
+    const allPhonesAreFaceUp = Object.values(this.state.teams)
+      .flatMap((team) => team.players)
+      .every((player) => player.phonePosition === "faceUp");
 
     if (this.state.isRoundDecided && !allPhonesAreFaceUp) {
       return;
