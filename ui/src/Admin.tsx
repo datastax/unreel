@@ -6,6 +6,7 @@ import { PlayerCount } from "./PlayerCount";
 import { WebSocketResponse } from "../../common/events";
 
 export function Admin() {
+  const [isStarting, setIsStarting] = useState(false);
   const [teams, setTeams] = useState<Record<string, Team>>({});
   const [teamAnswers, setTeamAnswers] = useState<Record<string, number>[]>([]);
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
@@ -24,6 +25,9 @@ export function Admin() {
       setAllQuotes(() => data.state.quotes);
       setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
       setTeamAnswers(() => data.state.teamAnswers);
+      if (data.state.isGameStarted) {
+        setIsStarting(false);
+      }
     };
   }, [ws]);
 
@@ -41,6 +45,7 @@ export function Admin() {
   }, [currentQuote]);
 
   const handleStartGame = () => {
+    setIsStarting(true);
     if (ws) {
       ws.dispatch({ type: "startGame" });
     }
@@ -89,9 +94,10 @@ export function Admin() {
             <span>No quotes yet.</span>
             <button
               onClick={handleStartGame}
-              className="bg-white text-black font-bold py-2 px-4 rounded"
+              disabled={isStarting}
+              className="bg-white disabled:bg-neutral-800 text-black font-bold py-2 px-4 rounded"
             >
-              Start Game
+              {isStarting ? "Starting..." : "Start Game"}
             </button>
           </div>
         ) : (
