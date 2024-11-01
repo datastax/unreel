@@ -16,6 +16,11 @@ export function InGame() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const { ws } = useParty();
 
+  const isRoundDecided =
+    gameState?.timeRemaining === 0 ||
+    gameState?.teamAnswers?.[gameState.currentQuoteIndex]?.[teamId!] !==
+      undefined;
+
   // Sync game state
   useEffect(() => {
     if (!ws) return () => {};
@@ -33,19 +38,12 @@ export function InGame() {
       if (!ws) return;
       if (!gameState) return;
       if (!teamId) return;
-      // Check if all players have voted
-      const team = gameState.teams[teamId];
-      const allPlayersHaveVoted = team.players.every(
-        (p) => p.phonePosition === "faceUp" || p.phonePosition === "faceDown"
-      );
-
-      // Count accepted votes
-      const acceptedVotes = team.players.filter(
-        (p) => p.phonePosition === "faceUp"
-      ).length;
 
       // If exactly one accepted and rest rejected, return early
-      if (allPlayersHaveVoted && acceptedVotes === 1) {
+      if (
+        gameState.teamAnswers[gameState.currentQuoteIndex]?.[teamId] !==
+        undefined
+      ) {
         return;
       }
 
@@ -95,15 +93,30 @@ export function InGame() {
   useEffect(() => {
     if (!gameState) return;
     if (!ws) return;
-    if (gameState.timeRemaining === roundDurationMs) {
+    if (!isRoundDecided) {
+      ws.dispatch({ type: "acceptOption", teamId: teamId!, playerId: ws.id });
+    }
+    if (isRoundDecided) {
       ws.dispatch({ type: "resetPhonePosition" });
     }
-  }, [gameState, ws]);
+  }, [gameState, ws, isRoundDecided, teamId]);
 
-  if (!teamId) {
-    navigate("/");
-    return null;
-  }
+  useEffect(() => {
+    if (!teamId) {
+      navigate("/");
+      return;
+    }
+
+    if (!gameState) return;
+
+    if (!gameState.isGameStarted) {
+      navigate("/");
+    }
+
+    if (gameState.gameEndedAt) {
+      navigate(`/game-over/${teamId}`);
+    }
+  }, [gameState, navigate, teamId]);
 
   if (!gameState) {
     return (
@@ -113,10 +126,13 @@ export function InGame() {
     );
   }
 
-  const isRoundDecided =
-    gameState.timeRemaining === 0 ||
-    gameState.teamAnswers?.[gameState.currentQuoteIndex]?.[teamId!] !==
-      undefined;
+  if (!teamId) {
+    return (
+      <TeamRoomWrapper>
+        <Spinner>Loading...</Spinner>
+      </TeamRoomWrapper>
+    );
+  }
 
   const meIndex =
     ws && gameState.teams[teamId]
@@ -124,16 +140,6 @@ export function InGame() {
           (p: { email: string }) => p.email === ws.id
         )
       : -1;
-
-  if (!gameState.isGameStarted) {
-    navigate("/");
-    return null;
-  }
-
-  if (gameState.gameEndedAt) {
-    navigate(`/game-over/${teamId}`);
-    return null;
-  }
 
   if (isRoundDecided || gameState.timeRemaining === 0) {
     const yourAnswer =

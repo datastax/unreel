@@ -18,7 +18,6 @@ export function TeamRoom() {
   useEffect(() => {
     if (!ws) return;
     if (!teamId) return;
-
     ws.dispatch({ type: "getState" });
   }, [ws, teamId]);
 
@@ -40,10 +39,18 @@ export function TeamRoom() {
     };
   }, [ws, teamId]);
 
-  if (!teamId) {
-    navigate("/");
-    return null;
-  }
+  useEffect(() => {
+    if (!teamId) {
+      navigate("/");
+      return;
+    }
+
+    if (!gameState) return;
+
+    if (!gameState?.teams[teamId]?.players.find((p) => p.email === ws?.id)) {
+      navigate("/");
+    }
+  }, [ws, teamId, gameState]);
 
   if (!gameState) {
     return (
@@ -54,7 +61,7 @@ export function TeamRoom() {
   }
 
   const currentPlayerCount = gameState.teams[teamId!].players.length;
-  const isFirstPlayer = gameState.teams[teamId!].players[0].email === ws?.id;
+  const isFirstPlayer = gameState.teams[teamId!].players?.[0]?.email === ws?.id;
   const gameHasOnlyOneTeamWithPlayers =
     Object.values(gameState.teams).filter((team) => team.players.length > 0)
       .length === 1;
