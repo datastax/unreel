@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { PlayerCount } from "./PlayerCount";
 import { teamBgColors } from "./util/teamBgColors";
@@ -11,6 +11,7 @@ import { WebSocketResponse } from "../../common/events";
 
 export function ChooseTeam() {
   const [playersByTeam, setPlayersByTeam] = useState<Record<string, Team>>({});
+  const { room } = useParams();
 
   const { ws } = useParty();
 
@@ -29,9 +30,13 @@ export function ChooseTeam() {
   }, [ws]);
 
   return (
-    <main className="p-4 grid grid-rows-[auto_1fr] gap-4 h-svh w-svw">
+    <main className="p-4 grid grid-rows-[auto_auto_1fr] gap-4 h-svh w-svw">
       <div>
         <DataStax />
+      </div>
+      <div className="flex justify-end gap-2 items-center">
+        Your room code is
+        <span className="text-xl text-ds-quaternary font-bold">{room}</span>
       </div>
       <div className="grid gap-4 w-full h-full items-center justify-center content-center text-center grid-rows-2 grid-cols-2">
         {Object.entries(playersByTeam).map(([name, team]) => (
@@ -44,7 +49,7 @@ export function ChooseTeam() {
             } rounded grid gap-2 h-full content-center items-center justify-center text-3xl font-bold bg-${
               teamBgColors[name]
             }`}
-            to={`/registration/${name}`}
+            to={`/${room}/registration/${name}`}
           >
             Team {name}
             <PlayerCount count={team.players.length} />

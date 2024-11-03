@@ -3,14 +3,9 @@ import { Route, Routes } from "react-router-dom";
 import { PostHogProvider } from "posthog-js/react";
 import * as Sentry from "@sentry/react";
 
-import { ChooseTeam } from "./ChooseTeam";
-import { Registration } from "./Registration";
-import { TeamRoom } from "./TeamRoom";
-import { PartyProvider } from "./PartyContext";
-import { InGame } from "./InGame";
-import { Admin } from "./Admin";
-import { GameOver } from "./GameOver";
 import { preventSleep } from "./util/preventSleep";
+import Room from "./Room";
+import { Home } from "./Home";
 
 Sentry.init({
   dsn: "https://b49a717d19bf879220ef6dd8bf66d421@o4508182996910080.ingest.us.sentry.io/4508182998089728",
@@ -41,16 +36,10 @@ function App() {
       apiKey={import.meta.env.VITE_POSTHOG_KEY}
       options={options}
     >
-      <PartyProvider>
-        <Routes>
-          <Route path="/" element={<ChooseTeam />} />
-          <Route path="/registration/:teamId" element={<Registration />} />
-          <Route path="/team/:teamId" element={<TeamRoom />} />
-          <Route path="/game/:teamId" element={<InGame />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/game-over/:teamId" element={<GameOver />} />
-        </Routes>
-      </PartyProvider>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/:room/*" element={<Room />} />
+      </Routes>
     </PostHogProvider>
   );
 }

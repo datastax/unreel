@@ -12,7 +12,7 @@ import { GameState } from "../../common/types";
 export function TeamRoom() {
   const [isGameStarting, setIsGameStarting] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const { teamId } = useParams();
+  const { teamId, room } = useParams();
   const { ws } = useParty();
   const navigate = useNavigate();
 
@@ -28,7 +28,7 @@ export function TeamRoom() {
         return;
       }
       if (data.state.isGameStarted) {
-        navigate(`/game/${teamId}`);
+        navigate(`/${room}/game/${teamId}`);
         return;
       }
       setGameState(data.state);
