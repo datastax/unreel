@@ -187,7 +187,7 @@ export function InGame() {
           )}
           <div className="mt-auto grid gap-4">
             <Spinner>
-              <p className="text-xl mb-2">Waiting for the next quote</p>
+              <p className="text-xl">Waiting for the next quote</p>
               <p className="text-sm text-opacity-50">
                 (waiting for all teams to finish)
               </p>
@@ -223,15 +223,19 @@ export function InGame() {
     );
   }
 
+  const ourAnswer =
+    gameState.teamAnswers[gameState.currentQuoteIndex]?.[teamId];
+  const isWaitingForOtherTeamsToAnswer = ourAnswer !== undefined;
+
   return (
     <TeamRoomWrapper>
       <CountdownCircle
         timeout={roundDurationMs}
         remainingTime={gameState.timeRemaining}
       />
-      <div className="flex flex-col items-center justify-center">
-        {gameState.quotes[gameState.currentQuoteIndex] && (
-          <div className="grid gap-8">
+      {gameState.quotes[gameState.currentQuoteIndex] && (
+        <>
+          <div className="flex flex-col gap-8 h-full">
             <div className="grid gap-4">
               <p className="text-xl">This quote:</p>
               <p className="text-2xl font-bold">
@@ -287,8 +291,25 @@ export function InGame() {
               </div>
             )}
           </div>
-        )}
-      </div>
+          {isWaitingForOtherTeamsToAnswer && (
+            <div className="mt-auto grid gap-4">
+              <Spinner>
+                <p className="text-xl">
+                  Answer submitted:{" "}
+                  {
+                    gameState.quotes[gameState.currentQuoteIndex].options[
+                      ourAnswer
+                    ]
+                  }
+                </p>
+                <p className="text-sm text-opacity-50">
+                  (waiting for all teams to finish)
+                </p>
+              </Spinner>
+            </div>
+          )}
+        </>
+      )}
     </TeamRoomWrapper>
   );
 }
