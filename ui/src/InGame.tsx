@@ -10,7 +10,7 @@ import { Spinner } from "./Spinner";
 import { roundDurationMs } from "../../common/util";
 
 export function InGame() {
-  const { teamId } = useParams();
+  const { teamId, room } = useParams();
   const navigate = useNavigate();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const hasMotion = useRef("requestPermission" in DeviceMotionEvent);
@@ -101,7 +101,7 @@ export function InGame() {
     }
 
     if (gameState.gameEndedAt) {
-      navigate(`/game-over/${teamId}`);
+      navigate(`/${room}/game-over/${teamId}`);
     }
   }, [gameState, navigate, teamId]);
 
