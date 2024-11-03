@@ -93,7 +93,8 @@ export function Registration() {
     ws.updateProperties({ id: state.email });
     ws.reconnect();
     ws.dispatch({ type: "joinTeam", teamId, email: ws.id, hasMotion });
-    setTimeout(() => navigate(`/${room}/team/${teamId}`), 1);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    navigate(`/${room}/team/${teamId}`);
   };
 
   useEffect(() => {
