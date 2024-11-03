@@ -6,9 +6,16 @@ import { TeamRoomWrapper } from "./TeamRoomWrapper";
 import { maxPlayersPerTeam } from "../../common/util";
 import { WebSocketResponse } from "../../common/events";
 
+type State = {
+  email: string;
+  understandsMotion: boolean;
+};
+
 export function Registration() {
-  const [email, setEmail] = useState("");
-  const [isValid, setIsValid] = useState(false);
+  const [state, setState] = useState<State>({
+    email: "",
+    understandsMotion: false,
+  });
   const { teamId } = useParams();
   const { ws } = useParty();
   const navigate = useNavigate();
@@ -66,28 +73,24 @@ export function Registration() {
         navigate(`/game/${teamId}`);
       }
     };
-  }, [ws, teamId, email]);
-
-  useEffect(() => {
-    setIsValid(validateEmail(email));
-  }, [email]);
+  }, [ws, teamId, state.email]);
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newEmail = e.target.value;
-    setEmail(newEmail);
+    setState((state) => ({ ...state, email: newEmail }));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!teamId) return;
-    if (!isValid) return;
+    if (!validateEmail(state.email)) return;
     if (!ws) return;
     const hasMotion = await requestPermission();
     try {
-      localStorage.setItem("email", email);
+      localStorage.setItem("email", state.email);
       // eslint-disable-next-line no-empty
     } catch {}
-    ws.updateProperties({ id: email });
+    ws.updateProperties({ id: state.email });
     ws.reconnect();
     ws.dispatch({ type: "joinTeam", teamId, email: ws.id, hasMotion });
     setTimeout(() => navigate(`/team/${teamId}`), 1);
@@ -97,7 +100,7 @@ export function Registration() {
     try {
       const email = localStorage.getItem("email");
       if (email) {
-        setEmail(email);
+        setState((state) => ({ ...state, email }));
       }
       // eslint-disable-next-line no-empty
     } catch {}
@@ -105,33 +108,47 @@ export function Registration() {
 
   return (
     <TeamRoomWrapper>
-      <h1 className="text-5xl font-bold mb-8">Join Team {teamId}</h1>
-      <p className="text-xl mb-8">
-        We need to know where to send your prize if you win, so please enter
-        your email below.
-      </p>
-      <form onSubmit={handleSubmit} className="w-full max-w-sm">
-        <div className="mb-4">
-          <label htmlFor="email" className="block font-bold mb-2">
+      <div className="grid gap-4">
+        <h1 className="text-5xl font-bold">Join Team {teamId}</h1>
+        <p className="text-xl">
+          We need to know where to send your prize if you win, so please enter
+          your email below.
+        </p>
+      </div>
+      <form onSubmit={handleSubmit} className="w-full grid gap-4">
+        <div className="grid gap-2">
+          <label htmlFor="email" className="block font-bold">
             Email Address
           </label>
           <input
             type="email"
             id="email"
-            value={email}
+            value={state.email}
             onChange={handleEmailChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             required
           />
         </div>
-        <p className="text-sm mb-4">
-          This game requires a bit of motion tracking, so please allow it when
-          asked.
-        </p>
+        <label className="flex gap-2 items-center">
+          <input
+            type="checkbox"
+            className="w-8 h-8"
+            checked={state.understandsMotion}
+            onChange={(e) => {
+              requestPermission();
+              setState((state) => ({
+                ...state,
+                understandsMotion: e.target.checked,
+              }));
+            }}
+          />
+          I understand that this game requires motion tracking and I will allow
+          it if asked.
+        </label>
         <div className="flex gap-2 items-center">
           <button
             type="submit"
-            disabled={!isValid}
+            disabled={!validateEmail(state.email) || !state.understandsMotion}
             className={`bg-white w-full hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow
                 disabled:opacity-50 disabled:cursor-not-allowed`}
           >
