@@ -194,15 +194,6 @@ export default class Server implements Party.Server {
           state: this.state,
         });
 
-        if (this.state.currentQuoteIndex === this.state.quotes.length - 1) {
-          this.state.gameEndedAt = Date.now();
-          this.broadcastToAllClients({
-            type: "state",
-            state: this.state,
-          });
-          return;
-        }
-
         return;
       case "nextQuote":
         this.isNextRoundQueued = false;
@@ -247,6 +238,13 @@ export default class Server implements Party.Server {
 
   sendNextQuote = () => {
     this.isNextRoundQueued = false;
+
+    if (this.state.currentQuoteIndex >= this.state.quotes.length - 1) {
+      this.state.gameEndedAt = Date.now();
+      this.broadcastToAllClients({ type: "state", state: this.state });
+      return;
+    }
+
     const nextQuoteIndex = this.state.currentQuoteIndex + 1;
 
     // Set all players to accept the next quote
@@ -258,12 +256,6 @@ export default class Server implements Party.Server {
         };
       });
     });
-
-    if (this.state.currentQuoteIndex >= this.state.quotes.length - 1) {
-      this.state.gameEndedAt = Date.now();
-      this.broadcastToAllClients({ type: "state", state: this.state });
-      return;
-    }
 
     this.startTimer();
     this.state.currentQuoteIndex = nextQuoteIndex;
@@ -328,7 +320,6 @@ export default class Server implements Party.Server {
 
     if (this.state.isRoundDecided && allPhonesAreFaceUp) {
       this.isNextRoundQueued = true;
-      // await new Promise((resolve) => setTimeout(resolve, 5000));
       this.state.isRoundDecided = false;
       this.sendNextQuote();
       return;
