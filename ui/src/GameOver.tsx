@@ -5,6 +5,7 @@ import { TeamRoomWrapper } from "./TeamRoomWrapper";
 import { Team } from "../../common/types";
 import { suffixify } from "./util/suffixify";
 import { WebSocketResponse } from "../../common/events";
+import { Spinner } from "./Spinner";
 
 export function GameOver() {
   const [teams, setTeams] = useState<Record<string, Team>>({});
@@ -44,12 +45,22 @@ export function GameOver() {
   const onlyOneTeamHasPlayers =
     Object.values(teams).filter((team) => team.players.length > 0).length === 1;
 
+  if (!position) {
+    return (
+      <TeamRoomWrapper>
+        <div className="px-4 grid gap-8">
+          <Spinner>
+            <span className="text-xl">Calculating scores...</span>
+          </Spinner>
+        </div>
+      </TeamRoomWrapper>
+    );
+  }
+
   return (
     <TeamRoomWrapper>
       <div className="px-4 grid gap-8">
-        <h1 className="text-6xl font-bold">
-          You came {suffixify(position || 0)}!
-        </h1>
+        <h1 className="text-6xl font-bold">You came {suffixify(position)}!</h1>
         <p className="text-2xl">
           You scored a total of {teams[teamId!]?.score} points. Check out the
           leaderboard to see how the other teams did.
