@@ -22,12 +22,14 @@ export function Home() {
   };
 
   return (
-    <main className="p-4 grid md:py-20 max-w-screen-md mx-auto grid-rows-[auto_1fr] gap-4 h-svh w-svw">
+    <main className="p-4 grid md:py-20 max-w-screen-md mx-auto gap-4 min-h-svh content-start w-svw">
       <DataStax />
       <div className="grid gap-8 content-start">
-        Unreel is a team-based trivia game where players work together to
-        identify quotes from popular movies, or identify quotes that were never
-        said but generated with AI.
+        <p>
+          Welcome to <strong>Unreel</strong>: a team-based trivia game where
+          players work together to identify quotes from popular movies, or
+          identify quotes that were never said but generated with AI.
+        </p>
         <div className="grid gap-4">
           <button
             disabled={state.isCreatingRoom}
