@@ -41,6 +41,9 @@ export function GameOver() {
     }
   };
 
+  const onlyOneTeamHasPlayers =
+    Object.values(teams).filter((team) => team.players.length > 0).length === 1;
+
   return (
     <TeamRoomWrapper>
       <div className="px-4 grid gap-8">
@@ -51,12 +54,14 @@ export function GameOver() {
           You scored a total of {teams[teamId!]?.score} points. Check out the
           leaderboard to see how the other teams did.
         </p>
-        <button
-          onClick={handlePlayAgain}
-          className="bg-black text-white font-bold p-4 rounded"
-        >
-          Play Again
-        </button>
+        {onlyOneTeamHasPlayers && (
+          <button
+            onClick={handlePlayAgain}
+            className="bg-black text-white font-bold p-4 rounded"
+          >
+            Play Again
+          </button>
+        )}
       </div>
     </TeamRoomWrapper>
   );
