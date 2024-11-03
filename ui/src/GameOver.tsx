@@ -10,7 +10,7 @@ export function GameOver() {
   const [teams, setTeams] = useState<Record<string, Team>>({});
   const { ws } = useParty();
   const navigate = useNavigate();
-  const { teamId } = useParams();
+  const { teamId, room } = useParams();
   const [position, setPosition] = useState<number | null>(null);
 
   useEffect(() => {
@@ -27,17 +27,17 @@ export function GameOver() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
       if (!data.state.isGameStarted) {
-        navigate("/");
+        navigate(`/${room}`);
         return;
       }
       setTeams(data.state.teams);
     };
-  }, [ws, navigate]);
+  }, [ws, navigate, room]);
 
   const handlePlayAgain = () => {
     if (ws) {
       ws.dispatch({ type: "resetGame" });
-      navigate("/");
+      navigate(`/${room}`);
     }
   };
 

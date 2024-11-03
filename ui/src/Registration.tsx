@@ -53,9 +53,9 @@ export function Registration() {
 
   useEffect(() => {
     if (!teamId) {
-      navigate("/");
+      navigate(`/${room}`);
     }
-  }, [teamId, navigate]);
+  }, [teamId, navigate, room]);
 
   useEffect(() => {
     if (!ws) return;
@@ -65,7 +65,7 @@ export function Registration() {
       const data = JSON.parse(event.data) as WebSocketResponse;
       if (data.state.teams[teamId].players.length > maxPlayersPerTeam) {
         alert("This team is full. Please choose another team.");
-        navigate("/");
+        navigate(`/${room}`);
         return;
       }
 
@@ -73,7 +73,7 @@ export function Registration() {
         navigate(`/${room}/game/${teamId}`);
       }
     };
-  }, [ws, teamId, state.email]);
+  }, [ws, teamId, room, state.email]);
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newEmail = e.target.value;

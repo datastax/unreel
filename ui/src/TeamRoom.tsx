@@ -24,7 +24,7 @@ export function TeamRoom() {
       const data = JSON.parse(event.data) as WebSocketResponse;
       if (data.state.teams[teamId].players.length > maxPlayersPerTeam) {
         alert("Sorry, your team just got too big! Try again!");
-        navigate("/");
+        navigate(`/${room}`);
         return;
       }
       if (data.state.isGameStarted) {
@@ -33,12 +33,12 @@ export function TeamRoom() {
       }
       setGameState(data.state);
     };
-  }, [ws, teamId]);
+  }, [ws, teamId, room]);
 
   useEffect(() => {
     if (!ws) return;
     if (!teamId) {
-      navigate("/");
+      navigate(`/${room}`);
       return;
     }
 
@@ -49,9 +49,9 @@ export function TeamRoom() {
     );
 
     if (!isPlayerInTeam) {
-      navigate("/");
+      navigate(`/${room}`);
     }
-  }, [ws, teamId, gameState]);
+  }, [ws, teamId, room, gameState]);
 
   const currentPlayerCount = gameState?.teams[teamId!].players.length;
   const isFirstPlayer =

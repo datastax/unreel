@@ -90,14 +90,14 @@ export function InGame() {
 
   useEffect(() => {
     if (!teamId) {
-      navigate("/");
+      navigate(`/${room}`);
       return;
     }
 
     if (!gameState) return;
 
     if (!gameState.isGameStarted) {
-      navigate("/");
+      navigate(`/${room}`);
     }
 
     if (gameState.gameEndedAt) {
