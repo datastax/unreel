@@ -6,7 +6,7 @@ export function DataStax() {
       viewBox="0 0 200 19"
       width="100%"
     >
-      <g clip-path="url(#clip0_1_7345)">
+      <g clipPath="url(#clip0_1_7345)">
         <path
           fill="white"
           d="M100.333 18.6517V14.6553H117.079V11.2692H104.001L99.5024 7.96824V3.30095L104.001 0H120.034V3.99637H103.705V7.27282H116.782L121.28 10.5726V15.3519L116.782 18.6517H100.333Z"

@@ -7,13 +7,15 @@ type TypeSafePartySocket = PartySocket & {
   dispatch: (message: WebSocketAction) => void;
 };
 
+type Props = { children: React.ReactNode; room: string };
+
 const PartyContext = createContext<{ ws: TypeSafePartySocket | null }>({
   ws: null,
 });
 
 export const useParty = () => useContext(PartyContext);
 
-export const PartyProvider = ({ children }: { children: React.ReactNode }) => {
+export const PartyProvider = ({ children, room }: Props) => {
   const [error, setError] = useState<boolean | null>(false);
   let email = "";
 
@@ -25,7 +27,7 @@ export const PartyProvider = ({ children }: { children: React.ReactNode }) => {
 
   const ws = usePartySocket({
     host: import.meta.env.VITE_PARTYKIT_HOST,
-    room: "lobby",
+    room,
     ...(email && { id: email }),
     onError: () => {
       setError(true);

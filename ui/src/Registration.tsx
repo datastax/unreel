@@ -16,7 +16,7 @@ export function Registration() {
     email: "",
     understandsMotion: false,
   });
-  const { teamId } = useParams();
+  const { teamId, room } = useParams();
   const { ws } = useParty();
   const navigate = useNavigate();
 
@@ -70,7 +70,7 @@ export function Registration() {
       }
 
       if (data.state.isGameStarted) {
-        navigate(`/game/${teamId}`);
+        navigate(`/${room}/game/${teamId}`);
       }
     };
   }, [ws, teamId, state.email]);
@@ -93,7 +93,7 @@ export function Registration() {
     ws.updateProperties({ id: state.email });
     ws.reconnect();
     ws.dispatch({ type: "joinTeam", teamId, email: ws.id, hasMotion });
-    setTimeout(() => navigate(`/team/${teamId}`), 1);
+    setTimeout(() => navigate(`/${room}/team/${teamId}`), 1);
   };
 
   useEffect(() => {
