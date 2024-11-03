@@ -37,6 +37,23 @@ export default class Server implements Party.Server {
     }, 1000);
   }
 
+  async onRequest(request: Party.Request) {
+    // get all messages
+    if (request.method === "GET") {
+      return new Response(
+        JSON.stringify(Array.from(this.room.getConnections()).map((e) => e.id)),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+    }
+
+    return new Response("Method not allowed", { status: 405 });
+  }
+
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
     console.log(
       `Connected:
