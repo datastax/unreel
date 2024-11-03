@@ -194,15 +194,6 @@ export default class Server implements Party.Server {
           state: this.state,
         });
 
-        if (this.state.currentQuoteIndex === this.state.quotes.length - 1) {
-          this.state.gameEndedAt = Date.now();
-          this.broadcastToAllClients({
-            type: "state",
-            state: this.state,
-          });
-          return;
-        }
-
         return;
       case "nextQuote":
         this.isNextRoundQueued = false;
@@ -249,6 +240,12 @@ export default class Server implements Party.Server {
     this.isNextRoundQueued = false;
     const nextQuoteIndex = this.state.currentQuoteIndex + 1;
 
+    if (nextQuoteIndex >= this.state.quotes.length) {
+      this.state.gameEndedAt = Date.now();
+      this.broadcastToAllClients({ type: "state", state: this.state });
+      return;
+    }
+
     // Set all players to accept the next quote
     Object.values(this.state.teams).forEach((team) => {
       team.players.forEach((player, index) => {
@@ -258,12 +255,6 @@ export default class Server implements Party.Server {
         };
       });
     });
-
-    if (this.state.currentQuoteIndex >= this.state.quotes.length - 1) {
-      this.state.gameEndedAt = Date.now();
-      this.broadcastToAllClients({ type: "state", state: this.state });
-      return;
-    }
 
     this.startTimer();
     this.state.currentQuoteIndex = nextQuoteIndex;
@@ -303,14 +294,6 @@ export default class Server implements Party.Server {
 
   checkRound = async () => {
     if (!this.state.isGameStarted) {
-      return;
-    }
-
-    if (this.state.gameEndedAt) {
-      return;
-    }
-
-    if (this.state.currentQuoteIndex >= this.state.quotes.length - 1) {
       return;
     }
 
