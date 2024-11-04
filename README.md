@@ -16,7 +16,14 @@ These components are connected but are intended to be deployed separately:
 
 ## Running Locally
 
-To run this locally,
+⚠️ It's important to speak to localhost over https, not http, because the PartyKit server uses WebSockets which require https. The project already serves traffic over https on localhost.
+
+Before you can run this locally, you need to allow self-signed HTTPS certificates in your browser. To do so, follow these steps:
+
+1. In Chrome, go to `chrome://flags/#allow-insecure-localhost` and enable the flag.
+2. Restart Chrome.
+
+Now, you can access Unreel locally by following these steps:
 
 1. Clone the repo.
 2. `cd` into each directory (`controller` and `ui`) and run `pnpm install` to install the dependencies.
@@ -26,9 +33,13 @@ To run this locally,
 
 Both components should now be running locally and support live reloads.
 
-> ⚠️ It's important to speak to localhost over https, not http, because the PartyKit server uses websockets which require https. The project already serves traffic over https on localhost.
+### Testing Across Devices
 
-### Type-safety
+If you'd like to test across devices, deploy the `controller` component to PartyKit Cloud by running `npx partykit deploy` in the `controller` directory and update the `VITE_PARTYKIT_HOST` in the `ui/.env` file to the deployed URL.
+
+Then, you can access your local UI at `https://<your-computers-ip-address>:5173` on your phone or other devices and it should just work.
+
+## Type-safety
 
 The `common` directory contains shared types between the `ui` and `controller` components. Here's how they're used:
 
@@ -43,7 +54,6 @@ All of this is essential to an application that works predictably and safely, al
 ## Current Status
 
 - The `ui` and `controller` components are complete.
-- The movie quotes are static and not yet coming from Langflow because we receive just 1 quote (we need 10). The Langflow flow is [here](https://astra.datastax.com/langflow/e65ec194-7211-4d3f-8d19-4eea47fc581b/flow/d8037b84-a0d3-4fb1-9292-a32ea7874b4b) and we'll switch it over as soon as it works as required.
 - We intend to have a scoreboard connected to `controller` on a separate TV as a separate web application that will be connected to the same PartyKit server. Please create a new directory called `scoreboard` to start working on this.
 
 ### To Do

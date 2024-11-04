@@ -29,6 +29,7 @@ export const PartyProvider = ({ children, room }: Props) => {
     host: import.meta.env.VITE_PARTYKIT_HOST,
     room,
     ...(email && { id: email }),
+    protocol: "wss",
     onError: () => {
       setError(true);
     },

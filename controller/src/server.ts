@@ -39,6 +39,15 @@ export default class Server implements Party.Server {
 
   async onRequest(request: Party.Request) {
     // get all messages
+    if (request.method === "OPTIONS") {
+      return new Response("", {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Access-Control-Allow-Headers": "*",
+        },
+      });
+    }
     if (request.method === "GET") {
       return new Response(
         JSON.stringify(Array.from(this.room.getConnections()).map((e) => e.id)),

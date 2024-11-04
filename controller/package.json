@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "partykit dev --live",
+    "dev": "partykit dev --live --https",
     "deploy": "partykit deploy"
   },
   "dependencies": {
