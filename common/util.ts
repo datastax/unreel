@@ -1,5 +1,24 @@
+import { type GameState } from "./types";
+
 export const maxPlayersPerTeam = 4;
 export const roundDurationMs = 60000;
+export const backends = ["Langflow", "Astra"] as const;
+
+export const initialState: GameState = {
+  timeRemaining: roundDurationMs,
+  quotes: [],
+  teams: {
+    1: { id: "1", score: 0, players: [] },
+    2: { id: "2", score: 0, players: [] },
+    3: { id: "3", score: 0, players: [] },
+    4: { id: "4", score: 0, players: [] },
+  },
+  isRoundDecided: false,
+  currentQuoteIndex: 0,
+  isGameStarted: false,
+  gameEndedAt: null,
+  teamAnswers: [],
+};
 
 export const fallbackQuotes = [
   {

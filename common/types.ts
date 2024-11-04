@@ -1,3 +1,5 @@
+import type { backends } from "./util";
+
 export type Option = {
   value: string;
   status: "accepted" | "rejected" | "undecided";
@@ -32,7 +34,6 @@ export type GameState = {
   teamAnswers: Record<string, number>[];
 };
 
-export const backends = ["Langflow", "Astra"] as const;
 export type GameOptions = {
   backend: (typeof backends)[number];
 };

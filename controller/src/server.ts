@@ -1,6 +1,5 @@
 import type * as Party from "partykit/server";
 import {
-  backends,
   type GameOptions,
   type GameState,
   type Team,
@@ -9,25 +8,9 @@ import {
   type WebSocketAction,
   type WebSocketResponse,
 } from "../../common/events";
-import { roundDurationMs } from "../../common/util";
+import { roundDurationMs, initialState, backends } from "../../common/util";
 import { getQuotes } from "./util/getQuotes";
 import { ensureCorrectAnswerInClampedOptionset } from "./util/ensureCorrectAnswerInClampedOptionset";
-
-const initialState: GameState = {
-  timeRemaining: roundDurationMs,
-  quotes: [],
-  teams: {
-    1: { id: "1", score: 0, players: [] },
-    2: { id: "2", score: 0, players: [] },
-    3: { id: "3", score: 0, players: [] },
-    4: { id: "4", score: 0, players: [] },
-  },
-  isRoundDecided: false,
-  currentQuoteIndex: 0,
-  isGameStarted: false,
-  gameEndedAt: null,
-  teamAnswers: [],
-};
 
 const initialOptions: GameOptions = {
   backend: backends[0],
@@ -48,6 +31,7 @@ export default class Server implements Party.Server {
   }
 
   async onRequest(request: Party.Request) {
+    // get all messages
     if (request.method === "OPTIONS") {
       return new Response("", {
         headers: {

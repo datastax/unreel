@@ -6,6 +6,7 @@ import { TeamRoom } from "./TeamRoom";
 import { PartyProvider } from "./PartyContext";
 import { InGame } from "./InGame";
 import { GameOver } from "./GameOver";
+import { Leaderboard } from "./Leaderboard";
 import { useEffect } from "react";
 import { RoomAdmin } from "./RoomAdmin";
 
@@ -32,6 +33,7 @@ function Room() {
         <Route path="/game/:teamId" element={<InGame />} />
         <Route path="/game-over/:teamId" element={<GameOver />} />
         <Route path="/admin" element={<RoomAdmin />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
       </Routes>
     </PartyProvider>
   );
