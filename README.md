@@ -27,9 +27,9 @@ Now, you can access Unreel locally by following these steps:
 
 1. Clone the repo.
 2. `cd` into each directory (`controller` and `ui`) and run `pnpm install` to install the dependencies.
-3. Copy the `ui/.env.example` to `ui/.env` and update the `VITE_PARTYKIT_HOST` to `http://localhost:1999`
-4. Run `npx partykit dev` in the `controller` directory to start the PartyKit server.
-5. Run `pnpm dev` in the `ui` directory to start the Astro app.
+3. In both `controller` and `ui`, copy the `.env.example` file to `.env` and update relevant values (get these from your team).
+4. Run `npm run dev` in the `controller` directory to start the PartyKit server.
+5. Run `npm run dev` in the `ui` directory to start the UI.
 
 Both components should now be running locally and support live reloads.
 
