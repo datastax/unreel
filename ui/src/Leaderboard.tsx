@@ -38,7 +38,7 @@ export function Leaderboard() {
   }, [ws, setState]);
 
   const activeTeams = Object.values(teams)
-    .filter((team) => team.players.length === maxPlayersPerTeam)
+    .filter((team) => team.players.length > 1)
     .sort((teamA: Team, teamB: Team) => teamB.score - teamA.score);
 
   const winningScore = activeTeams[0]?.score;
