@@ -4,6 +4,22 @@ import { shuffle } from "./shuffle";
 export const getQuotes = async () => {
   let response: any;
   try {
+    // First try render
+    response = await fetch(process.env.LANGFLOW_FALLBACK_API_URL!, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input_value: "10",
+        output_type: "chat",
+        input_type: "chat",
+        tweaks: {},
+      }),
+    }).then((r) => r.json());
+  } catch (e) {
+    // If it fails, try DS Langflow
+    console.log(`Render failed, using DS Langflow`, e);
     response = await fetch(process.env.LANGFLOW_API_URL!, {
       method: "POST",
       headers: {
@@ -22,20 +38,6 @@ export const getQuotes = async () => {
       }
       return res.json();
     });
-  } catch (e) {
-    console.log(`Original Langflow failed, using fallback Render API`, e);
-    response = await fetch(process.env.LANGFLOW_FALLBACK_API_URL!, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        input_value: "10",
-        output_type: "chat",
-        input_type: "chat",
-        tweaks: {},
-      }),
-    }).then((r) => r.json());
   }
 
   console.log(`Got response from Langflow`, response);
