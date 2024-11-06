@@ -200,23 +200,25 @@ export function InGame() {
                 Continue
               </button>
             )}
-            {!hasMotion.current && (
-              <div className="grid gap-4">
-                <button
-                  onClick={() =>
-                    ws?.dispatch({
-                      type: "updatePhonePosition",
-                      phonePosition: "faceUp",
-                      playerIndex: meIndex,
-                      teamId,
-                    })
-                  }
-                  className="bg-white text-black p-2 rounded-md"
-                >
-                  Ready Up
-                </button>
-              </div>
-            )}
+            {!hasMotion.current &&
+              gameState.teams[teamId].players[meIndex].phonePosition !==
+                "faceUp" && (
+                <div className="grid gap-4">
+                  <button
+                    onClick={() =>
+                      ws?.dispatch({
+                        type: "updatePhonePosition",
+                        phonePosition: "faceUp",
+                        playerIndex: meIndex,
+                        teamId,
+                      })
+                    }
+                    className="bg-white text-black p-2 rounded-md"
+                  >
+                    Ready Up
+                  </button>
+                </div>
+              )}
           </div>
         </div>
       </TeamRoomWrapper>
