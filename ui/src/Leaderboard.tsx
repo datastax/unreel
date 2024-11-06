@@ -10,11 +10,26 @@ import { useState, useEffect } from "react";
 import { DataStax } from "./DataStax";
 import Confetti from "react-confetti";
 
+function visibleScore(
+  team: Team,
+  currentQuoteIndex: number,
+  isRoundDecided: boolean
+) {
+  if (currentQuoteIndex < 0) {
+    return 0;
+  }
+  if (isRoundDecided) {
+    return team.score;
+  }
+  return team.previousRoundScore;
+}
+
 export function Leaderboard() {
   const [state, setState] = useState<GameState>(initialState);
 
   const teams = state.teams;
-  const currentQuote = state.quotes[state.currentQuoteIndex];
+  const currentQuoteIndex = state.currentQuoteIndex;
+  const currentQuote = state.quotes[currentQuoteIndex];
   const gameStarted = state.isGameStarted;
   const isRoundDecided = state.isRoundDecided;
   const timeRemaining = state.timeRemaining;
@@ -35,7 +50,11 @@ export function Leaderboard() {
 
   const activeTeams = Object.values(teams)
     .filter((team) => team.players.length > 1)
-    .sort((teamA: Team, teamB: Team) => teamB.score - teamA.score);
+    .sort(
+      (teamA: Team, teamB: Team) =>
+        visibleScore(teamB, currentQuoteIndex, isRoundDecided) -
+        visibleScore(teamA, currentQuoteIndex, isRoundDecided)
+    );
 
   const winningScore = activeTeams[0]?.score;
   let winningTeams: Team[] = [];
@@ -143,7 +162,10 @@ export function Leaderboard() {
                       } mb-2 h-24 flex items-center p-4`}
                     >
                       <p className="flex-grow text-left">Team {team.id}</p>
-                      <p>{team.score} pts</p>
+                      <p>
+                        {visibleScore(team, currentQuoteIndex, isRoundDecided)}{" "}
+                        pts
+                      </p>
                     </li>
                   ))}
                 </ol>

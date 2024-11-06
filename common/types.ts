@@ -8,6 +8,7 @@ export type Option = {
 export type Team = {
   id: string;
   score: number;
+  previousRoundScore: number;
   players: {
     id: string;
     email: string;
