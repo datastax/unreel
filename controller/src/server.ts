@@ -253,24 +253,6 @@ export default class Server implements Party.Server {
         };
         this.broadcastToAllClients({ type: "state", state: this.state });
         return;
-      case "forfeit": {
-        this.state.teams[data.teamId].players.forEach(
-          (player: Team["players"][number]) => {
-            player.choices[this.state.currentQuoteIndex] = {
-              value: "Forfeited",
-              status: "undecided",
-            };
-          }
-        );
-        this.state.teamAnswers[this.state.currentQuoteIndex] = {
-          [data.teamId]: -1,
-        };
-        this.broadcastToAllClients({
-          type: "state",
-          state: this.state,
-        });
-        return;
-      }
       default:
         console.log("Unknown message type", data);
     }
@@ -297,6 +279,7 @@ export default class Server implements Party.Server {
     });
 
     this.startTimer();
+    this.state.isRoundDecided = false;
     this.state.currentQuoteIndex = nextQuoteIndex;
     this.broadcastToAllClients({ type: "state", state: this.state });
   };
@@ -309,6 +292,37 @@ export default class Server implements Party.Server {
     this.timeRemainingInterval = setInterval(() => {
       if (this.state.timeRemaining <= 0) {
         clearInterval(this.timeRemainingInterval!);
+
+        // Time is up, forfeit all teams that haven't answered
+        Object.values(this.state.teams).forEach((team) => {
+          if (
+            this.state.teamAnswers[this.state.currentQuoteIndex]?.[team.id] ===
+            undefined
+          ) {
+            this.state.teams[team.id].players.forEach(
+              (player: Team["players"][number]) => {
+                player.choices[this.state.currentQuoteIndex] = {
+                  value: "Forfeited",
+                  status: "undecided",
+                };
+              }
+            );
+            if (team.players.length > 0) {
+              if (this.state.teamAnswers[this.state.currentQuoteIndex]) {
+                this.state.teamAnswers[this.state.currentQuoteIndex][team.id] =
+                  -1;
+              } else {
+                this.state.teamAnswers[this.state.currentQuoteIndex] = {
+                  [team.id]: -1,
+                };
+              }
+            }
+          }
+          this.broadcastToAllClients({
+            type: "state",
+            state: this.state,
+          });
+        });
         return;
       }
       this.state.timeRemaining -= 1000;
@@ -352,7 +366,6 @@ export default class Server implements Party.Server {
     if (this.state.isRoundDecided && allPhonesAreFaceUp) {
       this.isNextRoundQueued = true;
       // await new Promise((resolve) => setTimeout(resolve, 5000));
-      this.state.isRoundDecided = false;
       this.sendNextQuote();
       return;
     }
