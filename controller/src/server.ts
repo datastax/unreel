@@ -1,5 +1,10 @@
 import type * as Party from "partykit/server";
-import { type GameState, type Team } from "../../common/types";
+import {
+  backends,
+  type GameOptions,
+  type GameState,
+  type Team,
+} from "../../common/types";
 import {
   type WebSocketAction,
   type WebSocketResponse,
@@ -24,12 +29,17 @@ const initialState: GameState = {
   teamAnswers: [],
 };
 
+const initialOptions: GameOptions = {
+  backend: backends[0],
+};
+
 export default class Server implements Party.Server {
   timeRemainingInterval: NodeJS.Timeout | null = null;
   roundCheckerInterval: NodeJS.Timeout | null = null;
   isNextRoundQueued: boolean = false;
   isGameStartedQueued: boolean = false;
   state: GameState = Object.assign({}, initialState);
+  gameOptions: GameOptions = Object.assign({}, initialOptions);
 
   constructor(readonly room: Party.Room) {
     this.roundCheckerInterval = setInterval(() => {
@@ -38,7 +48,6 @@ export default class Server implements Party.Server {
   }
 
   async onRequest(request: Party.Request) {
-    // get all messages
     if (request.method === "OPTIONS") {
       return new Response("", {
         headers: {
@@ -49,6 +58,11 @@ export default class Server implements Party.Server {
       });
     }
     if (request.method === "GET") {
+      const url = new URL(request.url);
+      const backend =
+        (url.searchParams.get("backend") as (typeof backends)[number]) ??
+        backends[0];
+      this.gameOptions.backend = backend;
       return new Response(
         JSON.stringify(Array.from(this.room.getConnections()).map((e) => e.id)),
         {
@@ -118,7 +132,7 @@ export default class Server implements Party.Server {
         }
         this.isGameStartedQueued = true;
         this.state.quotes = ensureCorrectAnswerInClampedOptionset(
-          await getQuotes(),
+          await getQuotes(this.gameOptions.backend),
           Math.max(
             ...Object.values(this.state.teams).map(
               (team) => team.players.length

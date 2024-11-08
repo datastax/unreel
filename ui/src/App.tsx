@@ -6,6 +6,7 @@ import * as Sentry from "@sentry/react";
 import { preventSleep } from "./util/preventSleep";
 import Room from "./Room";
 import { Home } from "./Home";
+import { Admin } from "./Admin";
 
 Sentry.init({
   dsn: "https://b49a717d19bf879220ef6dd8bf66d421@o4508182996910080.ingest.us.sentry.io/4508182998089728",
@@ -38,6 +39,7 @@ function App() {
     >
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/admin/" element={<Admin />} />
         <Route path="/:room/*" element={<Room />} />
       </Routes>
     </PostHogProvider>

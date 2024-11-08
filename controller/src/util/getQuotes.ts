@@ -1,7 +1,31 @@
 import { fallbackQuotes } from "../../../common/util";
 import { shuffle } from "./shuffle";
+import { backends } from "../../../common/types";
+import { type Quote } from "../../../common/types";
+import { MiniAstra } from "./miniAstra";
 
-export const getQuotes = async () => {
+const miniAstra = new MiniAstra({
+  endpoint: process.env.ASTRA_DB_ENDPOINT_URL!,
+  token: process.env.ASTRA_DB_TOKEN!,
+});
+
+export const getQuotes = async (
+  backend: (typeof backends)[number] = backends[0]
+) => {
+  if (backend === "Langflow") {
+    return await getQuotesFromLangflow();
+  }
+  return await getQuotesFromAstra();
+};
+
+export const getQuotesFromAstra = async () => {
+  const questions = await miniAstra.findFromCollection(
+    process.env.ASTRA_DB_COLLECTION!
+  );
+  return shuffle(questions).slice(0, 10);
+};
+
+const getQuotesFromLangflow = async () => {
   let response: any;
   try {
     // First try render
