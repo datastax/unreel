@@ -31,3 +31,8 @@ export type GameState = {
   gameEndedAt: number | null;
   teamAnswers: Record<string, number>[];
 };
+
+export const backends = ["Langflow", "Astra"] as const;
+export type GameOptions = {
+  backend: (typeof backends)[number];
+};
