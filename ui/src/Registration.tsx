@@ -21,7 +21,7 @@ export function Registration() {
   const navigate = useNavigate();
 
   const requestPermission = async () => {
-    let hasMotion = false;
+    let hasMotion = true;
     // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
     if (typeof DeviceMotionEvent.requestPermission !== "function") {
       return false;
