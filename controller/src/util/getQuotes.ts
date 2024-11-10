@@ -1,7 +1,6 @@
 import { fallbackQuotes } from "../../../common/util";
 import { shuffle } from "./shuffle";
 import { backends } from "../../../common/types";
-import { type Quote } from "../../../common/types";
 import { MiniAstra } from "./miniAstra";
 
 const miniAstra = new MiniAstra({
