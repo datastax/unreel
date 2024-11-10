@@ -295,33 +295,25 @@ export default class Server implements Party.Server {
 
         // Time is up, forfeit all teams that haven't answered
         Object.values(this.state.teams).forEach((team) => {
-          if (
-            this.state.teamAnswers[this.state.currentQuoteIndex]?.[team.id] ===
-            undefined
-          ) {
-            this.state.teams[team.id].players.forEach(
-              (player: Team["players"][number]) => {
-                player.choices[this.state.currentQuoteIndex] = {
-                  value: "Forfeited",
-                  status: "undecided",
-                };
-              }
-            );
-            if (team.players.length > 0) {
-              if (this.state.teamAnswers[this.state.currentQuoteIndex]) {
-                this.state.teamAnswers[this.state.currentQuoteIndex][team.id] =
-                  -1;
-              } else {
-                this.state.teamAnswers[this.state.currentQuoteIndex] = {
-                  [team.id]: -1,
-                };
-              }
-            }
+          const currentQuoteIndex = this.state.currentQuoteIndex;
+          const teamAnswers = this.state.teamAnswers[currentQuoteIndex] || {};
+
+          if (teamAnswers[team.id] || team.players.length === 0) {
+            return;
           }
-          this.broadcastToAllClients({
-            type: "state",
-            state: this.state,
+          team.players.forEach((player: Team["players"][number]) => {
+            player.choices[currentQuoteIndex] = {
+              value: "Forfeited",
+              status: "undecided",
+            };
           });
+          teamAnswers[team.id] = -1;
+          this.state.teamAnswers[this.state.currentQuoteIndex] = teamAnswers;
+        });
+
+        this.broadcastToAllClients({
+          type: "state",
+          state: this.state,
         });
         return;
       }
