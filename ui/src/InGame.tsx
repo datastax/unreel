@@ -64,6 +64,7 @@ export function InGame() {
 
   // Handle motion
   useEffect(() => {
+    if (!DeviceMotionEvent) return;
     if (!hasMotion.current) {
       return;
     }
@@ -78,10 +79,14 @@ export function InGame() {
       }
     };
 
-    // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
-    DeviceMotionEvent.requestPermission().then(() => {
+    if ("requestPermission" in DeviceMotionEvent) {
+      // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
+      DeviceMotionEvent.requestPermission().then(() => {
+        window.addEventListener("devicemotion", handleMotion);
+      });
+    } else {
       window.addEventListener("devicemotion", handleMotion);
-    });
+    }
 
     return () => {
       window.removeEventListener("devicemotion", handleMotion);
