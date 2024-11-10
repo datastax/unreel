@@ -13,7 +13,7 @@ export function InGame() {
   const { teamId, room } = useParams();
   const navigate = useNavigate();
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const hasMotion = useRef("requestPermission" in DeviceMotionEvent);
+  const hasMotion = useRef(Boolean(window.DeviceMotionEvent));
   const { ws } = useParty();
 
   // Sync game state

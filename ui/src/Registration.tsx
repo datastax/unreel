@@ -21,10 +21,16 @@ export function Registration() {
   const navigate = useNavigate();
 
   const requestPermission = async () => {
-    let hasMotion = true;
+    let hasMotion = false;
+
+    if (window.DeviceMotionEvent) {
+      hasMotion = true;
+    }
+
     // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
     if (typeof DeviceMotionEvent.requestPermission !== "function") {
-      return false;
+      hasMotion = false;
+      return hasMotion;
     }
 
     // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
@@ -35,7 +41,7 @@ export function Registration() {
           alert(
             "Failed to get permission. You need to allow motion tracking to play the game."
           );
-          return false;
+          return hasMotion;
         }
         hasMotion = true;
       })
