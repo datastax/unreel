@@ -11,6 +11,7 @@ import {
 import { roundDurationMs, initialState, backends } from "../../common/util";
 import { getQuotes } from "./util/getQuotes";
 import { ensureCorrectAnswerInClampedOptionset } from "./util/ensureCorrectAnswerInClampedOptionset";
+import { storePlayersInDb } from "./util/storePlayersInDb";
 
 const initialOptions: GameOptions = {
   backend: backends[0],
@@ -126,6 +127,9 @@ export default class Server implements Party.Server {
         this.state.currentQuoteIndex = -1;
         this.state.isGameStarted = true;
         this.isGameStartedQueued = false;
+        // Add players to database
+        // Don't need to wait, this can be fire and forget
+        storePlayersInDb(Object.values(this.state.teams));
         this.sendNextQuote();
         return;
       case "updatePhonePosition":
