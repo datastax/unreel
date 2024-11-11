@@ -14,6 +14,14 @@ These components are connected but are intended to be deployed separately:
 - the PartyKit server via `npx partykit deploy` in the `controller` directory to deploy to PartyKit Cloud (an abstraction on Cloudflare), and
 - the React app via Vercel in the `ui` directory.
 
+## Database setup
+
+To run the application, you will need an [Astra DB database](https://astra.datastax.com/signup). The database should have two non-vector collections, named _questions_ and _players_.
+
+You will set the environment variables `ASTRA_DB_ENDPOINT_URL` and `ASTRA_DB_TOKEN` in the `controller/.env` file.
+
+Load questions into the _questions_ collection to play using cached questions. Questions follow the type `Quote`.
+
 ## Running Locally
 
 ⚠️ It's important to speak to localhost over https, not http, because the PartyKit server uses WebSockets which require https. The project already serves traffic over https on localhost.

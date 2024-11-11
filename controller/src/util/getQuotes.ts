@@ -1,11 +1,6 @@
 import { fallbackQuotes, backends } from "../../../common/util";
 import { shuffle } from "./shuffle";
-import { MiniAstra } from "./miniAstra";
-
-const miniAstra = new MiniAstra({
-  endpoint: process.env.ASTRA_DB_ENDPOINT_URL!,
-  token: process.env.ASTRA_DB_TOKEN!,
-});
+import { miniAstra } from "./miniAstra";
 
 export const getQuotes = async (
   backend: (typeof backends)[number] = backends[0]
@@ -17,9 +12,7 @@ export const getQuotes = async (
 };
 
 export const getQuotesFromAstra = async () => {
-  const questions = await miniAstra.findFromCollection(
-    process.env.ASTRA_DB_COLLECTION!
-  );
+  const questions = await miniAstra.findFromCollection("questions");
   return shuffle(questions).slice(0, 10);
 };
 
