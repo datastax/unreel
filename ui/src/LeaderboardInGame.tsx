@@ -74,7 +74,7 @@ export function LeaderboardInGame({
           </ul>
         </div>
       </div>
-      {(timeRemaining > 0 || !isRoundDecided) && (
+      {!isRoundDecided && (
         <div className="grid gap-4 mt-auto">
           <h2 className="text-2xl text-center">Seconds Remaining</h2>
           <LeaderboardCountdown timeRemaining={timeRemaining} />
