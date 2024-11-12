@@ -224,8 +224,8 @@ export default class Server implements Party.Server {
             Object.keys(this.state.teamAnswers[this.state.currentQuoteIndex])
               .length === 1;
           const firstTeamBonus = isFirstTeamToAnswer ? 10 : 0;
-          this.state.teams[data.teamId].score +=
-            this.state.timeRemaining / 1000 + firstTeamBonus;
+          const newScore = this.state.timeRemaining / 1000 + firstTeamBonus;
+          this.state.teams[data.teamId].score = newScore;
         }
 
         // Send the updated state to the clients
