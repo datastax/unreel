@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { generateRoomId } from "./util/generateRoomId";
-import { backends } from "../../common/types";
+import { backends } from "../../common/util";
 
 type State = {
   isCreatingRoom: boolean;
