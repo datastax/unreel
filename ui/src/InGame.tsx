@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useParty } from "./PartyContext";
 
@@ -8,12 +8,14 @@ import { WebSocketResponse } from "../../common/events";
 import { GameState } from "../../common/types";
 import { Spinner } from "./Spinner";
 import { roundDurationMs } from "../../common/util";
+import { checkMotionAvailability } from "./util/checkMotionAvailability";
+import { vote } from "./util/vote";
 
 export function InGame() {
   const { teamId, room } = useParams();
   const navigate = useNavigate();
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const hasMotion = useRef(Boolean(window.DeviceMotionEvent));
+  const [orientation, setOrientation] = useState<"up" | "down" | null>(null);
   const { ws } = useParty();
 
   // Sync game state
@@ -28,68 +30,43 @@ export function InGame() {
     return () => ws.removeEventListener("message", sync);
   }, [ws]);
 
-  const vote = useCallback(
-    (choice: "up" | "down") => {
-      if (!ws) return;
-      if (!gameState) return;
-      if (!teamId) return;
-
-      ws.dispatch({
-        type: "updatePhonePosition",
-        teamId,
-        playerIndex: meIndex,
-        phonePosition: choice === "up" ? "faceUp" : "faceDown",
-      });
-
-      if (gameState.gameEndedAt) return;
-      if (gameState.isRoundDecided) return;
-
-      const me = gameState.teams[teamId].players.find(
-        (p: { email: string }) => p.email === ws.id
-      );
-
-      if (!me) return;
-
-      if (choice === "up" && me.phonePosition === "faceUp") return;
-      if (choice === "down" && me.phonePosition === "faceDown") return;
-
-      ws.dispatch({
-        type: choice === "up" ? "acceptOption" : "rejectOption",
-        teamId: teamId,
-        playerId: ws.id,
-      });
-    },
-    [ws, teamId, gameState]
-  );
-
   // Handle motion
   useEffect(() => {
-    if (!DeviceMotionEvent) return;
-    if (!hasMotion.current) return;
+    if (!window.DeviceOrientationEvent) return;
+    checkMotionAvailability().then((hasMotion) => {
+      if (!hasMotion) return;
 
-    const handleMotion = function (e: DeviceMotionEvent) {
-      const acceleration = e.accelerationIncludingGravity;
+      const handleOrientation = async function (e: DeviceOrientationEvent) {
+        if (!e.beta) return;
+        const beta = Math.floor(e.beta);
 
-      if (acceleration?.z && acceleration.z > 5) {
-        vote("down");
-      } else if (acceleration?.z && acceleration.z < -5) {
-        vote("up");
-      }
-    };
+        // Face up is around 0 degrees (allow ±20° variance)
+        if (Math.abs(beta) < 20) {
+          setOrientation("up");
+        }
 
-    if ("requestPermission" in DeviceMotionEvent) {
-      // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
-      DeviceMotionEvent.requestPermission().then(() => {
-        window.addEventListener("devicemotion", handleMotion);
-      });
-    } else {
-      window.addEventListener("devicemotion", handleMotion);
-    }
+        // Face down is around 180 degrees (allow ±20° variance)
+        else if (Math.abs(beta) > 160) {
+          setOrientation("down");
+        }
+      };
 
-    return () => {
-      window.removeEventListener("devicemotion", handleMotion);
-    };
-  }, [vote, hasMotion.current]);
+      window.addEventListener("deviceorientation", handleOrientation);
+
+      return () => {
+        window.removeEventListener("deviceorientation", handleOrientation);
+      };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!orientation) return;
+    if (!gameState) return;
+    if (!teamId) return;
+    if (!ws) return;
+
+    vote({ choice: orientation, gameState, meIndex, teamId, ws });
+  }, [orientation, gameState, teamId, ws]);
 
   useEffect(() => {
     if (!teamId) {
@@ -124,7 +101,7 @@ export function InGame() {
     );
   }
 
-  hasMotion.current =
+  const hasMotion =
     gameState.teams[teamId].players.find((p) => p.email === ws.id)?.hasMotion ??
     false;
 
@@ -203,7 +180,7 @@ export function InGame() {
                 Continue
               </button>
             )}
-            {!hasMotion.current &&
+            {!hasMotion &&
               gameState.teams[teamId].players[meIndex].phonePosition !==
                 "faceUp" && (
                 <div className="grid gap-4">
@@ -265,23 +242,27 @@ export function InGame() {
                 </h1>
               </div>
             )}
-            {!hasMotion.current && (
+            {!hasMotion && (
               <div className="grid gap-4">
                 <button
-                  onClick={() => vote("up")}
+                  onClick={() =>
+                    vote({ choice: "up", gameState, meIndex, teamId, ws })
+                  }
                   className="bg-white text-black p-2 rounded-md"
                 >
                   True
                 </button>
                 <button
-                  onClick={() => vote("down")}
+                  onClick={() =>
+                    vote({ choice: "down", gameState, meIndex, teamId, ws })
+                  }
                   className="bg-white text-black p-2 rounded-md"
                 >
                   False
                 </button>
               </div>
             )}
-            {hasMotion.current && (
+            {hasMotion && (
               <div className="grid gap-4">
                 <p className="text-xl font-bold">How to Play</p>
                 <ul className="grid list-disc mx-4 gap-1">

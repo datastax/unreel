@@ -3,7 +3,7 @@ import { usePartySocket } from "partysocket/react";
 import PartySocket from "partysocket";
 import type { WebSocketAction } from "../../common/events";
 
-type TypeSafePartySocket = PartySocket & {
+export type TypeSafePartySocket = PartySocket & {
   dispatch: (message: WebSocketAction) => void;
 };
 
