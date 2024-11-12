@@ -1,6 +1,5 @@
 import type * as Party from "partykit/server";
 import {
-  backends,
   type GameOptions,
   type GameState,
   type Team,
@@ -9,25 +8,9 @@ import {
   type WebSocketAction,
   type WebSocketResponse,
 } from "../../common/events";
-import { roundDurationMs } from "../../common/util";
+import { roundDurationMs, initialState, backends } from "../../common/util";
 import { getQuotes } from "./util/getQuotes";
 import { ensureCorrectAnswerInClampedOptionset } from "./util/ensureCorrectAnswerInClampedOptionset";
-
-const initialState: GameState = {
-  timeRemaining: roundDurationMs,
-  quotes: [],
-  teams: {
-    1: { id: "1", score: 0, players: [] },
-    2: { id: "2", score: 0, players: [] },
-    3: { id: "3", score: 0, players: [] },
-    4: { id: "4", score: 0, players: [] },
-  },
-  isRoundDecided: false,
-  currentQuoteIndex: 0,
-  isGameStarted: false,
-  gameEndedAt: null,
-  teamAnswers: [],
-};
 
 const initialOptions: GameOptions = {
   backend: backends[0],
@@ -48,6 +31,7 @@ export default class Server implements Party.Server {
   }
 
   async onRequest(request: Party.Request) {
+    // get all messages
     if (request.method === "OPTIONS") {
       return new Response("", {
         headers: {
@@ -224,7 +208,10 @@ export default class Server implements Party.Server {
             Object.keys(this.state.teamAnswers[this.state.currentQuoteIndex])
               .length === 1;
           const firstTeamBonus = isFirstTeamToAnswer ? 10 : 0;
-          const newScore = this.state.timeRemaining / 1000 + firstTeamBonus;
+          const score = this.state.teams[data.teamId].score;
+          const roundScore = this.state.timeRemaining / 1000 + firstTeamBonus;
+          const newScore = score + roundScore;
+          this.state.teams[data.teamId].previousRoundScore = score;
           this.state.teams[data.teamId].score = newScore;
         }
 
@@ -246,10 +233,10 @@ export default class Server implements Party.Server {
         this.state.quotes = [];
         this.state.currentQuoteIndex = 0;
         this.state.teams = {
-          1: { id: "1", score: 0, players: [] },
-          2: { id: "2", score: 0, players: [] },
-          3: { id: "3", score: 0, players: [] },
-          4: { id: "4", score: 0, players: [] },
+          1: { id: "1", score: 0, previousRoundScore: 0, players: [] },
+          2: { id: "2", score: 0, previousRoundScore: 0, players: [] },
+          3: { id: "3", score: 0, previousRoundScore: 0, players: [] },
+          4: { id: "4", score: 0, previousRoundScore: 0, players: [] },
         };
         this.broadcastToAllClients({ type: "state", state: this.state });
         return;
@@ -264,6 +251,7 @@ export default class Server implements Party.Server {
 
     if (nextQuoteIndex >= this.state.quotes.length) {
       this.state.gameEndedAt = Date.now();
+      this.state.isRoundDecided = true;
       this.broadcastToAllClients({ type: "state", state: this.state });
       return;
     }
@@ -276,6 +264,7 @@ export default class Server implements Party.Server {
           status: "accepted",
         };
       });
+      team.previousRoundScore = team.score;
     });
 
     this.startTimer();
@@ -289,6 +278,9 @@ export default class Server implements Party.Server {
       clearInterval(this.timeRemainingInterval);
     }
     this.state.timeRemaining = roundDurationMs;
+    if (this.state.gameEndedAt) {
+      return;
+    }
     this.timeRemainingInterval = setInterval(() => {
       if (this.state.timeRemaining <= 0) {
         clearInterval(this.timeRemainingInterval!);
@@ -339,11 +331,11 @@ export default class Server implements Party.Server {
   };
 
   checkRound = async () => {
-    if (!this.state.isGameStarted) {
-      return;
-    }
-
-    if (this.isNextRoundQueued) {
+    if (
+      this.state.gameEndedAt ||
+      this.isNextRoundQueued ||
+      !this.state.isGameStarted
+    ) {
       return;
     }
 

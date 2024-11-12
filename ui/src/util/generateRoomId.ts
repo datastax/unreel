@@ -1,4 +1,5 @@
-import { backends, GameOptions } from "../../../common/types";
+import { backends } from "../../../common/util";
+import type { GameOptions } from "../../../common/types";
 
 export async function generateRoomId(roomOptions?: GameOptions) {
   const backend = roomOptions?.backend ?? backends[0];

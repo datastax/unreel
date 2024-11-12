@@ -83,6 +83,13 @@ export function RoomAdmin() {
       <fieldset className="border flex flex-col md:flex-row items-center gap-2 justify-between rounded p-4 border-neutral-800">
         <div className="text-lg">{totalPlayers} players connected.</div>
         <div className="flex items-center gap-2">
+          <a
+            href={`/${room}/leaderboard`}
+            className="md:text-base text-sm border border-white text-white font-bold py-2 px-4 rounded mr-2"
+            target="_blank"
+          >
+            Open Leaderboard
+          </a>
           <button
             onClick={handleSendNextQuote}
             className="md:text-base text-sm border border-white text-white font-bold py-2 px-4 rounded mr-2"
