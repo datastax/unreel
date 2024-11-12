@@ -29,7 +29,6 @@ export function Registration() {
 
     // @ts-expect-error for some reason, TypeScript thinks requestPermission doesn't exist
     if (typeof DeviceMotionEvent.requestPermission !== "function") {
-      hasMotion = false;
       return hasMotion;
     }
 

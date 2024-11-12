@@ -65,9 +65,7 @@ export function InGame() {
   // Handle motion
   useEffect(() => {
     if (!DeviceMotionEvent) return;
-    if (!hasMotion.current) {
-      return;
-    }
+    if (!hasMotion.current) return;
 
     const handleMotion = function (e: DeviceMotionEvent) {
       const acceleration = e.accelerationIncludingGravity;
