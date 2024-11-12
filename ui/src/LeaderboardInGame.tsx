@@ -43,18 +43,16 @@ export function LeaderboardInGame({
             </div>
           )}
           {!isRoundDecided && (
-            <>
-              <div className="grid gap-4 text-left">
-                <p className="text-2xl">Could have been said in:</p>
-                <ul className="list-disc list-inside grid gap-2">
-                  {currentQuote.options.map((option) => (
-                    <li className="text-4xl font-bold" key={option}>
-                      {option}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </>
+            <div className="grid gap-4 text-left">
+              <p className="text-2xl">Could have been said in:</p>
+              <ul className="list-disc list-inside grid gap-2">
+                {currentQuote.options.map((option) => (
+                  <li className="text-4xl font-bold" key={option}>
+                    {option}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
         <div className="w-1/3 grid gap-4 content-start">
@@ -68,7 +66,10 @@ export function LeaderboardInGame({
                 } mb-2 h-24 flex items-center p-4`}
               >
                 <p className="flex-grow text-left">Team {team.id}</p>
-                <p>{getVisibleScore(team, currentQuoteIndex)} points</p>
+                <p>
+                  {getVisibleScore(team, currentQuoteIndex, isRoundDecided)}{" "}
+                  points
+                </p>
               </li>
             ))}
           </ul>

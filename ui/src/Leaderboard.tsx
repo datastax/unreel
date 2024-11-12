@@ -36,8 +36,8 @@ export function Leaderboard() {
     .filter((team) => team.players.length > 1)
     .sort(
       (teamA: Team, teamB: Team) =>
-        getVisibleScore(teamB, currentQuoteIndex) -
-        getVisibleScore(teamA, currentQuoteIndex)
+        getVisibleScore(teamB, currentQuoteIndex, isRoundDecided) -
+        getVisibleScore(teamA, currentQuoteIndex, isRoundDecided)
     );
 
   const winningScore = activeTeams[0]?.score;
