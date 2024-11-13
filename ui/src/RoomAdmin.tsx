@@ -7,6 +7,7 @@ import { AdminGameManagement } from "./AdminGameManagement";
 import { AdminTeams } from "./AdminTeams";
 import { AdminPlayers } from "./AdminPlayers";
 import { WebSocketResponse } from "../../common/events";
+import { AdminOptions } from "./AdminOptions";
 
 export function RoomAdmin() {
   const { room } = useParams();
@@ -113,6 +114,8 @@ export function RoomAdmin() {
         totalPlayers={totalPlayers}
         teams={teams}
       />
+
+      {options && <AdminOptions options={options} />}
     </div>
   );
 }
