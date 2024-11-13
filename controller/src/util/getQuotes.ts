@@ -1,22 +1,23 @@
-import { fallbackQuotes, backends } from "../../../common/util";
+import { fallbackQuotes, defaultGameOptions } from "../../../common/util";
 import { shuffle } from "./shuffle";
 import { miniAstra } from "./miniAstra";
 
 export const getQuotes = async (
-  backend: (typeof backends)[number] = backends[0]
+  numberOfQuestions: number = defaultGameOptions.numberOfQuestions,
+  backend: BackendOptions = defaultGameOptions.backend
 ) => {
   if (backend === "Langflow") {
-    return await getQuotesFromLangflow();
+    return await getQuotesFromLangflow(numberOfQuestions);
   }
-  return await getQuotesFromAstra();
+  return await getQuotesFromAstra(numberOfQuestions);
 };
 
-export const getQuotesFromAstra = async () => {
+export const getQuotesFromAstra = async (numberOfQuestions: number) => {
   const questions = await miniAstra.findFromCollection("questions");
-  return shuffle(questions).slice(0, 10);
+  return shuffle(questions).slice(0, numberOfQuestions);
 };
 
-const getQuotesFromLangflow = async () => {
+const getQuotesFromLangflow = async (numberOfQuestions: number) => {
   let response: any;
   try {
     // First try render
@@ -26,7 +27,7 @@ const getQuotesFromLangflow = async () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        input_value: "10",
+        input_value: `${numberOfQuestions}`,
         output_type: "chat",
         input_type: "chat",
         tweaks: {},
@@ -42,7 +43,7 @@ const getQuotesFromLangflow = async () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        input_value: "10",
+        input_value: `${numberOfQuestions}`,
         output_type: "chat",
         input_type: "chat",
         tweaks: {},

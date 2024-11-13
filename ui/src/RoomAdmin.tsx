@@ -1,8 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useParty } from "./PartyContext";
-import { Team, Quote } from "../../common/types";
-
+import { Team, Quote, GameOptions } from "../../common/types";
 import { AdminQuotes } from "./AdminQuotes";
 import { AdminGameManagement } from "./AdminGameManagement";
 import { AdminTeams } from "./AdminTeams";
@@ -23,6 +22,7 @@ export function RoomAdmin() {
   const [teams, setTeams] = useState<Record<string, Team>>({});
   const [teamAnswers, setTeamAnswers] = useState<Record<string, number>[]>([]);
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
+  const [options, setOptions] = useState<GameOptions | null>(null);
   const [allQuotes, setAllQuotes] = useState<Quote[]>([]);
   const { ws } = useParty();
   const quotesContainerRef = useRef<HTMLDivElement>(null);
@@ -37,6 +37,7 @@ export function RoomAdmin() {
       if (data.type === "reset") {
         return navigate("/admin");
       }
+      setOptions(() => data.options);
       setTeams(() => data.state.teams);
       setAllQuotes(() => data.state.quotes);
       setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
@@ -84,6 +85,7 @@ export function RoomAdmin() {
     (acc, team) => acc + team.players.length,
     0
   );
+
   return (
     <div className="md:p-8 p-4 grid gap-8">
       <AdminGameManagement

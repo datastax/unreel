@@ -35,6 +35,10 @@ export type GameState = {
   teamAnswers: Record<string, number>[];
 };
 
+export type BackendOptions = (typeof backends)[number];
+
 export type GameOptions = {
-  backend: (typeof backends)[number];
+  backend: BackendOptions;
+  numberOfQuestions: number;
+  roundDurationMs: number;
 };

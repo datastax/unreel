@@ -1,5 +1,6 @@
 import type * as Party from "partykit/server";
 import {
+  type BackendOptions,
   type GameOptions,
   type GameState,
   type Team,
@@ -8,14 +9,10 @@ import {
   type WebSocketAction,
   type WebSocketResponse,
 } from "../../common/events";
-import { roundDurationMs, initialState, backends } from "../../common/util";
+import { defaultGameOptions, initialState } from "../../common/util";
 import { getQuotes } from "./util/getQuotes";
 import { ensureCorrectAnswerInClampedOptionset } from "./util/ensureCorrectAnswerInClampedOptionset";
 import { storePlayersInDb } from "./util/storePlayersInDb";
-
-const initialOptions: GameOptions = {
-  backend: backends[0],
-};
 
 export default class Server implements Party.Server {
   timeRemainingInterval: NodeJS.Timeout | null;
@@ -33,7 +30,7 @@ export default class Server implements Party.Server {
     this.isNextRoundQueued = false;
     this.isGameStartedQueued = false;
     this.state = structuredClone(initialState);
-    this.gameOptions = structuredClone(initialOptions);
+    this.gameOptions = structuredClone(defaultGameOptions);
   }
 
   async onRequest(request: Party.Request) {
@@ -50,9 +47,22 @@ export default class Server implements Party.Server {
     if (request.method === "GET") {
       const url = new URL(request.url);
       const backend =
-        (url.searchParams.get("backend") as (typeof backends)[number]) ??
-        backends[0];
-      this.gameOptions.backend = backend;
+        (url.searchParams.get("backend") as BackendOptions) ??
+        this.gameOptions.backend;
+      const strNumberOfQuestions = url.searchParams.get("numberOfQuestions");
+      const numberOfQuestions = strNumberOfQuestions
+        ? parseInt(strNumberOfQuestions, 10)
+        : this.gameOptions.numberOfQuestions;
+      const strRoundDurationMs = url.searchParams.get("roundDurationMs");
+      const roundDurationMs = strRoundDurationMs
+        ? parseInt(strRoundDurationMs, 10)
+        : this.gameOptions.numberOfQuestions;
+      this.gameOptions = {
+        ...this.gameOptions,
+        backend,
+        numberOfQuestions,
+        roundDurationMs,
+      };
       return new Response(
         JSON.stringify(Array.from(this.room.getConnections()).map((e) => e.id)),
         {
@@ -84,6 +94,7 @@ export default class Server implements Party.Server {
           {
             type: "state",
             state: this.state,
+            options: this.gameOptions,
           },
           sender.id
         );
@@ -109,6 +120,7 @@ export default class Server implements Party.Server {
         this.broadcastToAllClients({
           type: "state",
           state: this.state,
+          options: this.gameOptions,
         });
         return;
       case "leaveTeam":
@@ -120,6 +132,7 @@ export default class Server implements Party.Server {
         this.broadcastToAllClients({
           type: "state",
           state: this.state,
+          options: this.gameOptions,
         });
         return;
       case "startGame":
@@ -128,7 +141,10 @@ export default class Server implements Party.Server {
         }
         this.isGameStartedQueued = true;
         this.state.quotes = ensureCorrectAnswerInClampedOptionset(
-          await getQuotes(this.gameOptions.backend),
+          await getQuotes(
+            this.gameOptions.numberOfQuestions,
+            this.gameOptions.backend
+          ),
           Math.max(
             ...Object.values(this.state.teams).map(
               (team) => team.players.length
@@ -173,6 +189,7 @@ export default class Server implements Party.Server {
         this.broadcastToAllClients({
           type: "state",
           state: this.state,
+          options: this.gameOptions,
         });
 
         // Check if all players have made a choice
@@ -234,6 +251,7 @@ export default class Server implements Party.Server {
         this.broadcastToAllClients({
           type: "state",
           state: this.state,
+          options: this.gameOptions,
         });
 
         return;
@@ -251,7 +269,7 @@ export default class Server implements Party.Server {
         this.isNextRoundQueued = false;
         this.isGameStartedQueued = false;
         this.state = structuredClone(initialState);
-        this.gameOptions = structuredClone(initialOptions);
+        this.gameOptions = structuredClone(defaultGameOptions);
         this.broadcastToAllClients({ type: "reset" });
         return;
       default:
@@ -269,6 +287,7 @@ export default class Server implements Party.Server {
       this.broadcastToAllClients({
         type: "state",
         state: this.state,
+        options: this.gameOptions,
       });
       return;
     }
@@ -287,14 +306,18 @@ export default class Server implements Party.Server {
     this.startTimer();
     this.state.isRoundDecided = false;
     this.state.currentQuoteIndex = nextQuoteIndex;
-    this.broadcastToAllClients({ type: "state", state: this.state });
+    this.broadcastToAllClients({
+      type: "state",
+      state: this.state,
+      options: this.gameOptions,
+    });
   };
 
   startTimer = () => {
     if (this.timeRemainingInterval) {
       clearInterval(this.timeRemainingInterval);
     }
-    this.state.timeRemaining = roundDurationMs;
+    this.state.timeRemaining = this.gameOptions.roundDurationMs;
     if (this.state.gameEndedAt) {
       return;
     }
@@ -323,6 +346,7 @@ export default class Server implements Party.Server {
         this.broadcastToAllClients({
           type: "state",
           state: this.state,
+          options: this.gameOptions,
         });
         return;
       }
@@ -330,6 +354,7 @@ export default class Server implements Party.Server {
       this.broadcastToAllClients({
         type: "state",
         state: this.state,
+        options: this.gameOptions,
       });
     }, 1000);
   };
@@ -390,6 +415,7 @@ export default class Server implements Party.Server {
       this.broadcastToAllClients({
         type: "state",
         state: this.state,
+        options: this.gameOptions,
       });
     }
   };

@@ -1,30 +1,31 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { generateRoomId } from "./util/generateRoomId";
-import { backends } from "../../common/util";
+import { defaultGameOptions, backends } from "../../common/util";
+import { GameOptions } from "../../common/types";
 
-type State = {
-  isCreatingRoom: boolean;
-  roomCode: string;
-  backend: (typeof backends)[number];
-};
+type State = { isCreatingRoom: boolean; roomCode: string } & GameOptions;
 
 export function Admin() {
   const navigate = useNavigate();
   const [state, setState] = useState<State>({
     isCreatingRoom: false,
     roomCode: "",
-    backend: backends[0],
+    ...defaultGameOptions,
   });
 
   const createRoom = async () => {
     setState((s) => ({ ...s, isCreatingRoom: true }));
-    const roomId = await generateRoomId({ backend: state.backend });
+    const roomId = await generateRoomId({
+      backend: state.backend,
+      numberOfQuestions: state.numberOfQuestions,
+      roundDurationMs: state.roundDurationMs,
+    });
     navigate(`/${roomId}/admin`);
   };
 
   return (
-    <main className="md:p-8 p-4 grid gap-8">
+    <main className="p-4 grid md:py-20 max-w-screen-md mx-auto gap-4 min-h-svh content-start w-svw">
       <h1 className="md:text-6xl text-4xl font-bold">Game Management</h1>
       <div className="grid gap-8 content-start">
         <p>
@@ -59,6 +60,44 @@ export function Admin() {
                 </div>
               ))}
             </div>
+            <div className="flex items-center gap-2 mb-4">
+              <label htmlFor="numberOfQuestions" className="gap-1">
+                Number of questions:
+              </label>
+              <input
+                onChange={(e) =>
+                  setState((s) => ({
+                    ...s,
+                    numberOfQuestions: parseInt(e.target.value, 10),
+                  }))
+                }
+                id="numberOfQuestions"
+                className="rounded grow bg-neutral-900 border border-neutral-700 px-4 py-2"
+                type="number"
+                name="numberOfQuestions"
+                value={state.numberOfQuestions}
+              />
+            </div>
+
+            <div className="flex items-center gap-2 mb-4">
+              <label htmlFor="roundDurationMs" className="gap-1">
+                Round duration in ms:
+              </label>
+              <input
+                onChange={(e) =>
+                  setState((s) => ({
+                    ...s,
+                    roundDurationMs: parseInt(e.target.value, 10),
+                  }))
+                }
+                id="roundDurationMs"
+                className="rounded grow bg-neutral-900 border border-neutral-700 px-4 py-2"
+                type="number"
+                name="roundDurationMs"
+                value={state.roundDurationMs}
+              />
+            </div>
+
             <div className="flex">
               <button
                 disabled={state.isCreatingRoom}
