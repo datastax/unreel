@@ -8,6 +8,7 @@ import { TeamRoomWrapper } from "./TeamRoomWrapper";
 import { WebSocketResponse } from "../../common/events";
 import { Spinner } from "./Spinner";
 import { GameState } from "../../common/types";
+import { BodiInterspersed } from "./BodiInterspersed";
 
 export function TeamRoom() {
   const [isGameStarting, setIsGameStarting] = useState(false);
@@ -65,8 +66,8 @@ export function TeamRoom() {
 
   return (
     <TeamRoomWrapper>
-      <h1 className="text-5xl font-bold">How to Play</h1>
-      <ul className="text-xl grid gap-2 list-disc list-outside mx-4">
+      <h1 className="relative z-10 text-5xl font-bold">How to Play</h1>
+      <ul className="relative z-10 text-xl grid gap-2 list-disc list-outside mx-4">
         <li>Your entire team will receive the same movie quote.</li>
         <li>You will see one possible answer per player.</li>
         <li>Talk to your team to decide on the best answer.</li>
@@ -98,6 +99,7 @@ export function TeamRoom() {
           )}
         </div>
       )}
+      <BodiInterspersed />
     </TeamRoomWrapper>
   );
 }

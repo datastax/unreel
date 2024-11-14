@@ -46,9 +46,12 @@ export function ChooseTeam() {
               team.players.length >= maxPlayersPerTeam
                 ? "pointer-events-none opacity-50"
                 : ""
-            } rounded grid gap-2 h-full content-center items-center justify-center text-3xl font-bold bg-${
+            } rounded grid gap-2 h-full relative content-center items-center justify-center text-3xl font-bold bg-${
               teamBgColors[name]
-            }`}
+            } bg-cover bg-center bg-blend-overlay`}
+            style={{
+              backgroundImage: `url(/bodi/team-chooser.avif)`,
+            }}
             to={`/${room}/registration/${name}`}
           >
             Team {name}

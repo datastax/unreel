@@ -5,7 +5,7 @@ export function TeamRoomWrapper({ children }: { children: React.ReactNode }) {
   const { teamId } = useParams();
   return (
     <div
-      className={`flex flex-col p-8 gap-4 items-center py-16 min-h-svh ${
+      className={`flex relative flex-col p-8 gap-8 items-center min-h-svh ${
         teamId ? `bg-${teamBgColors[teamId!]}` : "bg-black"
       }`}
     >
