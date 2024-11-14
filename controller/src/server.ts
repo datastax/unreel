@@ -96,7 +96,7 @@ export default class Server implements Party.Server {
           this.state.teams[data.teamId].players.push({
             id: sender.id,
             email: data.email,
-            phonePosition: null,
+            phonePosition: "faceUp",
             choices: {},
             hasMotion: data.hasMotion,
           });

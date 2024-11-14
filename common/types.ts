@@ -12,7 +12,7 @@ export type Team = {
   players: {
     id: string;
     email: string;
-    phonePosition: "faceUp" | "faceDown" | null;
+    phonePosition: "faceUp" | "faceDown";
     choices: Record<string, Option>;
     hasMotion: boolean;
   }[];
