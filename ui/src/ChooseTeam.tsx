@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 
 import { PlayerCount } from "./PlayerCount";
 import { teamBgColors } from "./util/teamBgColors";
@@ -12,7 +12,7 @@ import { WebSocketResponse } from "../../common/events";
 export function ChooseTeam() {
   const [playersByTeam, setPlayersByTeam] = useState<Record<string, Team>>({});
   const { room } = useParams();
-
+  const navigate = useNavigate();
   const { ws } = useParty();
 
   useEffect(() => {
@@ -25,7 +25,11 @@ export function ChooseTeam() {
     ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      setPlayersByTeam(data.state.teams);
+      if (data.type === "state") {
+        setPlayersByTeam(data.state.teams);
+      } else {
+        navigate("/");
+      }
     };
   }, [ws]);
 

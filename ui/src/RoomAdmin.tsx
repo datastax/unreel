@@ -34,12 +34,17 @@ export function RoomAdmin() {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      setTeams(() => data.state.teams);
-      setAllQuotes(() => data.state.quotes);
-      setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
-      setTeamAnswers(() => data.state.teamAnswers);
-      if (data.state.isGameStarted) {
-        setIsStarting(false);
+      console.log(data);
+      if (data.type === "state") {
+        setTeams(() => data.state.teams);
+        setAllQuotes(() => data.state.quotes);
+        setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
+        setTeamAnswers(() => data.state.teamAnswers);
+        if (data.state.isGameStarted) {
+          setIsStarting(false);
+        }
+      } else {
+        navigate("/admin");
       }
     };
   }, [ws]);
@@ -74,6 +79,7 @@ export function RoomAdmin() {
     if (ws) {
       ws.dispatch({ type: "resetGame" });
     }
+    navigate("/admin");
   };
 
   const totalPlayers = Object.values(teams).reduce(

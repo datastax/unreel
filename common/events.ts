@@ -17,4 +17,6 @@ export type WebSocketAction =
     }
   | { type: "resetGame" };
 
-export type WebSocketResponse = { type: "state"; state: GameState };
+export type WebSocketResponse =
+  | { type: "state"; state: GameState }
+  | { type: "reset" };

@@ -13,22 +13,35 @@ import { getQuotes } from "./util/getQuotes";
 import { ensureCorrectAnswerInClampedOptionset } from "./util/ensureCorrectAnswerInClampedOptionset";
 import { storePlayersInDb } from "./util/storePlayersInDb";
 
+type RoomState = {
+  timeRemainingInterval: NodeJS.Timeout | null;
+  roundCheckerInterval: NodeJS.Timeout | null;
+  isNextRoundQueued: boolean;
+  isGameStartedQueued: boolean;
+  state: GameState;
+  gameOptions: GameOptions;
+};
+
+type RoomStates = Record<string, RoomState>;
+
 const initialOptions: GameOptions = {
   backend: backends[0],
 };
 
 export default class Server implements Party.Server {
-  timeRemainingInterval: NodeJS.Timeout | null = null;
-  roundCheckerInterval: NodeJS.Timeout | null = null;
-  isNextRoundQueued: boolean = false;
-  isGameStartedQueued: boolean = false;
-  state: GameState = Object.assign({}, initialState);
-  gameOptions: GameOptions = Object.assign({}, initialOptions);
+  roomStates: RoomStates = {};
 
   constructor(readonly room: Party.Room) {
-    this.roundCheckerInterval = setInterval(() => {
-      this.checkRound();
-    }, 1000);
+    this.roomStates[room.id] = {
+      timeRemainingInterval: null,
+      roundCheckerInterval: setInterval(() => {
+        this.checkRound();
+      }, 1000),
+      isNextRoundQueued: false,
+      isGameStartedQueued: false,
+      state: structuredClone(initialState),
+      gameOptions: structuredClone(initialOptions),
+    };
   }
 
   async onRequest(request: Party.Request) {
@@ -47,7 +60,7 @@ export default class Server implements Party.Server {
       const backend =
         (url.searchParams.get("backend") as (typeof backends)[number]) ??
         backends[0];
-      this.gameOptions.backend = backend;
+      this.roomStates[this.room.id].gameOptions.backend = backend;
       return new Response(
         JSON.stringify(Array.from(this.room.getConnections()).map((e) => e.id)),
         {
@@ -72,28 +85,29 @@ export default class Server implements Party.Server {
   }
 
   onMessage = async (message: string, sender: Party.Connection) => {
+    const roomState = this.roomStates[this.room.id];
     const data = JSON.parse(message) as WebSocketAction;
     switch (data.type) {
       case "getState":
         this.broadcastToSingleClient(
           {
             type: "state",
-            state: this.state,
+            state: roomState.state,
           },
           sender.id
         );
         return;
       case "joinTeam":
-        const existingPlayerIndex = this.state.teams[
+        const existingPlayerIndex = roomState.state.teams[
           data.teamId
         ].players.findIndex((player) => player.email === data.email);
         if (existingPlayerIndex !== -1) {
           // Update existing player's id if they reconnect
-          this.state.teams[data.teamId].players[existingPlayerIndex].id =
+          roomState.state.teams[data.teamId].players[existingPlayerIndex].id =
             sender.id;
         } else {
           // Add new player if they don't exist
-          this.state.teams[data.teamId].players.push({
+          roomState.state.teams[data.teamId].players.push({
             id: sender.id,
             email: data.email,
             phonePosition: null,
@@ -101,58 +115,59 @@ export default class Server implements Party.Server {
             hasMotion: data.hasMotion,
           });
         }
-        this.broadcastToAllClients({ type: "state", state: this.state });
+        this.broadcastToAllClients({ type: "state", state: roomState.state });
         return;
       case "leaveTeam":
-        Object.values(this.state.teams).forEach((team) => {
+        Object.values(roomState.state.teams).forEach((team) => {
           team.players = team.players.filter(
             (player: Team["players"][number]) => player.id !== data.playerId
           );
         });
-        this.broadcastToAllClients({ type: "state", state: this.state });
+        this.broadcastToAllClients({ type: "state", state: roomState.state });
         return;
       case "startGame":
-        if (this.isGameStartedQueued) {
+        if (roomState.isGameStartedQueued) {
           return;
         }
-        this.isGameStartedQueued = true;
-        this.state.quotes = ensureCorrectAnswerInClampedOptionset(
-          await getQuotes(this.gameOptions.backend),
+        roomState.isGameStartedQueued = true;
+        roomState.state.quotes = ensureCorrectAnswerInClampedOptionset(
+          await getQuotes(roomState.gameOptions.backend),
           Math.max(
-            ...Object.values(this.state.teams).map(
+            ...Object.values(roomState.state.teams).map(
               (team) => team.players.length
             )
           )
         );
-        this.state.currentQuoteIndex = -1;
-        this.state.isGameStarted = true;
-        this.isGameStartedQueued = false;
+        roomState.state.currentQuoteIndex = -1;
+        roomState.state.isGameStarted = true;
+        roomState.isGameStartedQueued = false;
         // Add players to database
         // Don't need to wait, this can be fire and forget
-        storePlayersInDb(Object.values(this.state.teams));
+        storePlayersInDb(Object.values(roomState.state.teams));
         this.sendNextQuote();
         return;
       case "updatePhonePosition":
-        this.state.teams[data.teamId].players[data.playerIndex].phonePosition =
-          data.phonePosition;
+        roomState.state.teams[data.teamId].players[
+          data.playerIndex
+        ].phonePosition = data.phonePosition;
         return;
       case "rejectOption":
       case "acceptOption":
         // Identify the player
-        const playerIndex = this.state.teams[data.teamId].players.findIndex(
-          (player) => player.id === data.playerId
-        );
+        const playerIndex = roomState.state.teams[
+          data.teamId
+        ].players.findIndex((player) => player.id === data.playerId);
 
-        const player = this.state.teams[data.teamId].players[playerIndex];
+        const player = roomState.state.teams[data.teamId].players[playerIndex];
 
         if (!player) {
           return;
         }
 
         // Update the player's choice
-        player.choices[this.state.currentQuoteIndex] = {
+        player.choices[roomState.state.currentQuoteIndex] = {
           value:
-            this.state.quotes[this.state.currentQuoteIndex].options[
+            roomState.state.quotes[roomState.state.currentQuoteIndex].options[
               playerIndex
             ],
           status: data.type === "acceptOption" ? "accepted" : "rejected",
@@ -161,14 +176,14 @@ export default class Server implements Party.Server {
         // Broadcast the updated state (just for the admin UI)
         this.broadcastToAllClients({
           type: "state",
-          state: this.state,
+          state: roomState.state,
         });
 
         // Check if all players have made a choice
-        const allPlayersHaveMadeChoice = this.state.teams[
+        const allPlayersHaveMadeChoice = roomState.state.teams[
           data.teamId
         ].players.every(
-          (player) => player.choices[this.state.currentQuoteIndex]
+          (player) => player.choices[roomState.state.currentQuoteIndex]
         );
 
         if (!allPlayersHaveMadeChoice) {
@@ -176,73 +191,76 @@ export default class Server implements Party.Server {
         }
 
         // Check each team for exactly one accepted choice and update answers
-        Object.values(this.state.teams).forEach((team) => {
+        Object.values(roomState.state.teams).forEach((team) => {
           const playersWithAcceptedChoice = team.players.filter(
             (player) =>
-              player.choices[this.state.currentQuoteIndex]?.status ===
+              player.choices[roomState.state.currentQuoteIndex]?.status ===
               "accepted"
           );
 
           if (playersWithAcceptedChoice.length === 1) {
             // Found team with exactly one accepted choice
-            if (!this.state.teamAnswers[this.state.currentQuoteIndex]) {
-              this.state.teamAnswers[this.state.currentQuoteIndex] = {};
+            if (
+              !roomState.state.teamAnswers[roomState.state.currentQuoteIndex]
+            ) {
+              roomState.state.teamAnswers[roomState.state.currentQuoteIndex] =
+                {};
             }
 
             // Update that team's answer
-            this.state.teamAnswers[this.state.currentQuoteIndex][team.id] =
-              this.state.quotes[this.state.currentQuoteIndex].options.findIndex(
-                (option) =>
-                  option ===
-                  playersWithAcceptedChoice[0].choices[
-                    this.state.currentQuoteIndex
-                  ].value
-              );
+            roomState.state.teamAnswers[roomState.state.currentQuoteIndex][
+              team.id
+            ] = roomState.state.quotes[
+              roomState.state.currentQuoteIndex
+            ].options.findIndex(
+              (option) =>
+                option ===
+                playersWithAcceptedChoice[0].choices[
+                  roomState.state.currentQuoteIndex
+                ].value
+            );
           }
         });
 
         // Check if the answer is correct
         const isAnswerCorrect =
-          this.state.teamAnswers[this.state.currentQuoteIndex][data.teamId] ===
-          this.state.quotes[this.state.currentQuoteIndex].correctOptionIndex;
+          roomState.state.teamAnswers[roomState.state.currentQuoteIndex][
+            data.teamId
+          ] ===
+          roomState.state.quotes[roomState.state.currentQuoteIndex]
+            .correctOptionIndex;
 
         if (isAnswerCorrect) {
           // Add base points for correct answer plus first team bonus
           const isFirstTeamToAnswer =
-            Object.keys(this.state.teamAnswers[this.state.currentQuoteIndex])
-              .length === 1;
+            Object.keys(
+              roomState.state.teamAnswers[roomState.state.currentQuoteIndex]
+            ).length === 1;
           const firstTeamBonus = isFirstTeamToAnswer ? 10 : 0;
-          const score = this.state.teams[data.teamId].score;
-          const roundScore = this.state.timeRemaining / 1000 + firstTeamBonus;
+          const score = roomState.state.teams[data.teamId].score;
+          const roundScore =
+            roomState.state.timeRemaining / 1000 + firstTeamBonus;
           const newScore = score + roundScore;
-          this.state.teams[data.teamId].previousRoundScore = score;
-          this.state.teams[data.teamId].score = newScore;
+          roomState.state.teams[data.teamId].previousRoundScore = score;
+          roomState.state.teams[data.teamId].score = newScore;
         }
 
         // Send the updated state to the clients
         this.broadcastToAllClients({
           type: "state",
-          state: this.state,
+          state: roomState.state,
         });
 
         return;
       case "nextQuote":
-        this.isNextRoundQueued = false;
+        roomState.isNextRoundQueued = false;
         this.sendNextQuote();
         return;
       case "resetGame":
-        clearInterval(this.timeRemainingInterval!);
-        this.state = Object.assign({}, initialState);
-        this.state.teamAnswers = [];
-        this.state.quotes = [];
-        this.state.currentQuoteIndex = 0;
-        this.state.teams = {
-          1: { id: "1", score: 0, previousRoundScore: 0, players: [] },
-          2: { id: "2", score: 0, previousRoundScore: 0, players: [] },
-          3: { id: "3", score: 0, previousRoundScore: 0, players: [] },
-          4: { id: "4", score: 0, previousRoundScore: 0, players: [] },
-        };
-        this.broadcastToAllClients({ type: "state", state: this.state });
+        clearInterval(roomState.timeRemainingInterval!);
+        clearInterval(roomState.roundCheckerInterval!);
+        delete this.roomStates[this.room.id];
+        this.broadcastToAllClients({ type: "reset" });
         return;
       default:
         console.log("Unknown message type", data);
@@ -250,21 +268,22 @@ export default class Server implements Party.Server {
   };
 
   sendNextQuote = () => {
-    this.isNextRoundQueued = false;
-    const nextQuoteIndex = this.state.currentQuoteIndex + 1;
+    const roomState = this.roomStates[this.room.id];
+    roomState.isNextRoundQueued = false;
+    const nextQuoteIndex = roomState.state.currentQuoteIndex + 1;
 
-    if (nextQuoteIndex >= this.state.quotes.length) {
-      this.state.gameEndedAt = Date.now();
-      this.state.isRoundDecided = true;
-      this.broadcastToAllClients({ type: "state", state: this.state });
+    if (nextQuoteIndex >= roomState.state.quotes.length) {
+      roomState.state.gameEndedAt = Date.now();
+      roomState.state.isRoundDecided = true;
+      this.broadcastToAllClients({ type: "state", state: roomState.state });
       return;
     }
 
     // Set all players to accept the next quote
-    Object.values(this.state.teams).forEach((team) => {
+    Object.values(roomState.state.teams).forEach((team) => {
       team.players.forEach((player, index) => {
         player.choices[nextQuoteIndex] = {
-          value: this.state.quotes[nextQuoteIndex].options[index],
+          value: roomState.state.quotes[nextQuoteIndex].options[index],
           status: "accepted",
         };
       });
@@ -272,27 +291,29 @@ export default class Server implements Party.Server {
     });
 
     this.startTimer();
-    this.state.isRoundDecided = false;
-    this.state.currentQuoteIndex = nextQuoteIndex;
-    this.broadcastToAllClients({ type: "state", state: this.state });
+    roomState.state.isRoundDecided = false;
+    roomState.state.currentQuoteIndex = nextQuoteIndex;
+    this.broadcastToAllClients({ type: "state", state: roomState.state });
   };
 
   startTimer = () => {
-    if (this.timeRemainingInterval) {
-      clearInterval(this.timeRemainingInterval);
+    const roomState = this.roomStates[this.room.id];
+    if (roomState.timeRemainingInterval) {
+      clearInterval(roomState.timeRemainingInterval);
     }
-    this.state.timeRemaining = roundDurationMs;
-    if (this.state.gameEndedAt) {
+    roomState.state.timeRemaining = roundDurationMs;
+    if (roomState.state.gameEndedAt) {
       return;
     }
-    this.timeRemainingInterval = setInterval(() => {
-      if (this.state.timeRemaining <= 0) {
-        clearInterval(this.timeRemainingInterval!);
+    roomState.timeRemainingInterval = setInterval(() => {
+      if (roomState.state.timeRemaining <= 0) {
+        clearInterval(roomState.timeRemainingInterval!);
 
         // Time is up, forfeit all teams that haven't answered
-        Object.values(this.state.teams).forEach((team) => {
-          const currentQuoteIndex = this.state.currentQuoteIndex;
-          const teamAnswers = this.state.teamAnswers[currentQuoteIndex] || {};
+        Object.values(roomState.state.teams).forEach((team) => {
+          const currentQuoteIndex = roomState.state.currentQuoteIndex;
+          const teamAnswers =
+            roomState.state.teamAnswers[currentQuoteIndex] || {};
 
           if (teamAnswers[team.id] || team.players.length === 0) {
             return;
@@ -304,19 +325,20 @@ export default class Server implements Party.Server {
             };
           });
           teamAnswers[team.id] = -1;
-          this.state.teamAnswers[this.state.currentQuoteIndex] = teamAnswers;
+          roomState.state.teamAnswers[roomState.state.currentQuoteIndex] =
+            teamAnswers;
         });
 
         this.broadcastToAllClients({
           type: "state",
-          state: this.state,
+          state: roomState.state,
         });
         return;
       }
-      this.state.timeRemaining -= 1000;
+      roomState.state.timeRemaining -= 1000;
       this.broadcastToAllClients({
         type: "state",
-        state: this.state,
+        state: roomState.state,
       });
     }, 1000);
   };
@@ -335,46 +357,48 @@ export default class Server implements Party.Server {
   };
 
   checkRound = async () => {
+    const roomState = this.roomStates[this.room.id];
     if (
-      this.state.gameEndedAt ||
-      this.isNextRoundQueued ||
-      !this.state.isGameStarted
+      roomState.state.gameEndedAt ||
+      roomState.isNextRoundQueued ||
+      !roomState.state.isGameStarted
     ) {
       return;
     }
 
-    const allPhonesAreFaceUp = Object.values(this.state.teams)
+    const allPhonesAreFaceUp = Object.values(roomState.state.teams)
       .flatMap((team) => team.players)
       .every((player) => player.phonePosition === "faceUp");
 
-    if (this.state.isRoundDecided && !allPhonesAreFaceUp) {
+    if (roomState.state.isRoundDecided && !allPhonesAreFaceUp) {
       return;
     }
 
-    if (this.state.isRoundDecided && allPhonesAreFaceUp) {
-      this.isNextRoundQueued = true;
+    if (roomState.state.isRoundDecided && allPhonesAreFaceUp) {
+      roomState.isNextRoundQueued = true;
       // await new Promise((resolve) => setTimeout(resolve, 5000));
       this.sendNextQuote();
       return;
     }
 
-    if (this.state.isRoundDecided) {
+    if (roomState.state.isRoundDecided) {
       return;
     }
 
-    const teamsThatHavePlayers = Object.values(this.state.teams).filter(
+    const teamsThatHavePlayers = Object.values(roomState.state.teams).filter(
       (team) => team.players.length > 0
     );
 
     if (
       teamsThatHavePlayers.every(
         (team) =>
-          this.state.teamAnswers[this.state.currentQuoteIndex][team.id] !==
-          undefined
+          roomState.state.teamAnswers[roomState.state.currentQuoteIndex][
+            team.id
+          ] !== undefined
       )
     ) {
-      this.state.isRoundDecided = true;
-      this.broadcastToAllClients({ type: "state", state: this.state });
+      roomState.state.isRoundDecided = true;
+      this.broadcastToAllClients({ type: "state", state: roomState.state });
     }
   };
 }

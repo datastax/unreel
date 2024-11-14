@@ -36,7 +36,9 @@ export function Leaderboard() {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      transitionViewIfSupported(() => setState(data.state));
+      if (data.type === "state") {
+        transitionViewIfSupported(() => setState(data.state));
+      }
     };
   }, [ws, setState]);
 
