@@ -9,6 +9,14 @@ import { LeaderboardInGame } from "./LeaderboardInGame";
 import { getVisibleScore } from "./util/getVisibleScore";
 import { LeaderboardEndgame } from "./LeaderboardEndgame";
 
+const transitionViewIfSupported = (updateCb: () => void) => {
+  if (document.startViewTransition) {
+    document.startViewTransition(updateCb);
+  } else {
+    updateCb();
+  }
+};
+
 export function Leaderboard() {
   const [state, setState] = useState<GameState>(initialState);
 
@@ -28,7 +36,7 @@ export function Leaderboard() {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      setState(data.state);
+      transitionViewIfSupported(() => setState(data.state));
     };
   }, [ws, setState]);
 

@@ -61,6 +61,7 @@ export function LeaderboardInGame({
             {activeTeams.map((team) => (
               <li
                 key={team.id}
+                style={{ viewTransitionName: `team-${team.id}` }}
                 className={`rounded text-center text-3xl font-bold bg-${
                   teamBgColors[team.id]
                 } mb-2 h-24 flex items-center p-4`}
