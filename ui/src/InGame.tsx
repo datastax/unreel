@@ -10,6 +10,8 @@ import { Spinner } from "./Spinner";
 import { roundDurationMs } from "../../common/util";
 import { checkMotionAvailability } from "./util/checkMotionAvailability";
 import { vote } from "./util/vote";
+import { BodiBackground } from "./BodiBackground";
+import { BodiInterspersed } from "./BodiInterspersed";
 
 export function InGame() {
   const { teamId, room } = useParams();
@@ -129,7 +131,7 @@ export function InGame() {
 
     return (
       <TeamRoomWrapper>
-        <div className="grid min-h-[calc(100svh-8rem)] gap-4 items-start justify-center">
+        <div className="flex flex-col min-h-[calc(100svh-4rem)] gap-4 items-start justify-center">
           {yourAnswer ? (
             <div className="grid gap-8">
               <h1 className="text-5xl font-bold">
@@ -165,7 +167,7 @@ export function InGame() {
               </div>
             </div>
           )}
-          <div className="mt-auto grid gap-4">
+          <div className="mt-auto mx-auto grid gap-4">
             <Spinner>
               <p className="text-xl">Waiting for the next quote</p>
               <p className="text-sm text-opacity-50">
@@ -199,6 +201,7 @@ export function InGame() {
                   </button>
                 </div>
               )}
+            <BodiInterspersed />
           </div>
         </div>
       </TeamRoomWrapper>
@@ -217,7 +220,7 @@ export function InGame() {
       />
       {gameState.quotes[gameState.currentQuoteIndex] && (
         <>
-          <div className="flex flex-col gap-8 h-full">
+          <div className="flex relative z-10 flex-col gap-8 h-full">
             <div className="grid gap-4">
               <p className="text-xl">This quote:</p>
               <p className="text-2xl font-bold">
@@ -278,7 +281,7 @@ export function InGame() {
             )}
           </div>
           {isWaitingForOtherTeamsToAnswer && (
-            <div className="mt-auto grid gap-4">
+            <div className="mt-auto bg-black/50 p-4 rounded backdrop-blur-lg relative z-10 grid gap-4">
               <Spinner>
                 <p className="text-xl">
                   Answer submitted:{" "}
@@ -296,6 +299,7 @@ export function InGame() {
           )}
         </>
       )}
+      <BodiBackground />
     </TeamRoomWrapper>
   );
 }

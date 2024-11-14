@@ -6,6 +6,7 @@ import { TeamRoomWrapper } from "./TeamRoomWrapper";
 import { maxPlayersPerTeam } from "../../common/util";
 import { WebSocketResponse } from "../../common/events";
 import { checkMotionAvailability } from "./util/checkMotionAvailability";
+import { BodiBackground } from "./BodiBackground";
 
 type State = {
   email: string;
@@ -105,14 +106,14 @@ export function Registration() {
 
   return (
     <TeamRoomWrapper>
-      <div className="grid gap-4">
+      <div className="w-full relative z-10 grid gap-4">
         <h1 className="text-5xl font-bold">Join Team {teamId}</h1>
         <p className="text-xl">
           We need to know where to send your prize if you win, so please enter
           your email below.
         </p>
       </div>
-      <form onSubmit={handleSubmit} className="w-full grid gap-4">
+      <form onSubmit={handleSubmit} className="w-full relative z-10 grid gap-4">
         <div className="grid gap-2">
           <label htmlFor="email" className="block font-bold">
             Email Address
@@ -147,12 +148,13 @@ export function Registration() {
             type="submit"
             disabled={!validateEmail(state.email) || !state.understandsMotion}
             className={`bg-white w-full hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow
-                disabled:opacity-50 disabled:cursor-not-allowed`}
+                disabled:opacity-90 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed`}
           >
             Join Team
           </button>
         </div>
       </form>
+      <BodiBackground />
     </TeamRoomWrapper>
   );
 }

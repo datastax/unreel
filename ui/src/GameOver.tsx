@@ -6,6 +6,7 @@ import { Team } from "../../common/types";
 import { suffixify } from "./util/suffixify";
 import { WebSocketResponse } from "../../common/events";
 import { Spinner } from "./Spinner";
+import { BodiBackground } from "./BodiBackground";
 
 export function GameOver() {
   const [teams, setTeams] = useState<Record<string, Team>>({});
@@ -74,6 +75,7 @@ export function GameOver() {
           </button>
         )}
       </div>
+      <BodiBackground />
     </TeamRoomWrapper>
   );
 }
