@@ -130,6 +130,11 @@ export function InGame() {
 
     return (
       <TeamRoomWrapper>
+        {yourAnswer === correctAnswer ? (
+          <audio src="/sounds/correct.mp3" autoPlay loop={false} />
+        ) : (
+          <audio src="/sounds/wrong.mp3" autoPlay loop={false} />
+        )}
         <div className="flex flex-col min-h-[calc(100svh-4rem)] gap-4 items-start justify-center">
           {yourAnswer ? (
             <div className="grid gap-8">
