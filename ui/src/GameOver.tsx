@@ -60,7 +60,7 @@ export function GameOver() {
 
   return (
     <TeamRoomWrapper>
-      <div className="px-4 grid gap-8">
+      <div className="px-4 grid relative z-10 gap-8">
         <h1 className="text-6xl font-bold">You came {suffixify(position)}!</h1>
         <p className="text-2xl">
           You scored a total of {teams[teamId!]?.score} points. Check out the
