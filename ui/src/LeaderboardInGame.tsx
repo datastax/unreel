@@ -3,6 +3,7 @@ import { Team } from "../../common/types";
 import { Quote } from "../../common/types";
 import { LeaderboardCountdown } from "./LeaderboardCountdown";
 import { LeaderboardLayout } from "./LeaderboardLayout";
+import { PhoneIcon } from "./PhoneIcon";
 import { getVisibleScore } from "./util/getVisibleScore";
 import { teamBgColors } from "./util/teamBgColors";
 
@@ -20,9 +21,14 @@ export function LeaderboardInGame({
   timeRemaining: number;
 }) {
   const correctAnswer = currentQuote.options[currentQuote?.correctOptionIndex];
+
   return (
     <LeaderboardLayout>
-      <div className="flex gap-8 items-start w-full">
+      <div
+        className={`flex gap-8 items-start w-full ${
+          isRoundDecided ? "flex-col-reverse" : "flex-row"
+        }`}
+      >
         <div className="w-full grid gap-8">
           <div className="grid gap-4 content-start text-left">
             <p className="text-2xl">This quote:</p>
@@ -55,22 +61,50 @@ export function LeaderboardInGame({
             </div>
           )}
         </div>
-        <div className="w-1/3 grid gap-4 content-start">
+        <div className="w-full grid gap-4 content-start">
           <h2 className="text-2xl">Leaderboard</h2>
-          <ul className="w-full mx-auto">
+          <ul className="w-full grid gap-4 mx-auto">
             {activeTeams.map((team) => (
               <li
                 key={team.id}
                 style={{ viewTransitionName: `team-${team.id}` }}
-                className={`rounded text-center text-3xl font-bold bg-${
+                className={`rounded text-center overflow-hidden bg-${
                   teamBgColors[team.id]
-                } mb-2 h-24 flex items-center p-4`}
+                } bg-opacity-35 grid gap-2 text-3xl font-bold relative h-24 p-4`}
               >
-                <p className="flex-grow text-left">Team {team.id}</p>
-                <p>
-                  {getVisibleScore(team, currentQuoteIndex, isRoundDecided)}{" "}
-                  points
-                </p>
+                <div
+                  className={`absolute -z-1 h-full top-0 left-0 bg-${
+                    teamBgColors[team.id]
+                  }`}
+                  style={{
+                    width: `calc(1rem + ${
+                      100 -
+                      (team.players.filter((p) => p.phonePosition === "faceUp")
+                        .length /
+                        team.players.length) *
+                        100
+                    }% * 2)`,
+                  }}
+                ></div>
+                <div className="flex relative justify-between z-10 items-center gap-4">
+                  <p>Team {team.id}</p>
+                  <div className="flex gap-2">
+                    {team.players.map((player) => (
+                      <div
+                        style={{
+                          opacity: player.phonePosition === "faceUp" ? 1 : 0.3,
+                        }}
+                        key={player.id}
+                      >
+                        <PhoneIcon />
+                      </div>
+                    ))}
+                  </div>
+                  <p>
+                    {getVisibleScore(team, currentQuoteIndex, isRoundDecided)}
+                    &nbsp; points
+                  </p>
+                </div>
               </li>
             ))}
           </ul>
