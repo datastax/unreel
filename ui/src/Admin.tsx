@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { generateRoomId } from "./util/generateRoomId";
+import { generateRoom } from "./util/generateRoom";
 import { defaultGameOptions, backends } from "../../common/util";
 import { GameOptions } from "../../common/types";
 
@@ -16,7 +16,7 @@ export function Admin() {
 
   const createRoom = async () => {
     setState((s) => ({ ...s, isCreatingRoom: true }));
-    const roomId = await generateRoomId({
+    const roomId = await generateRoom({
       backend: state.backend,
       numberOfQuestions: state.numberOfQuestions,
       roundDurationMs: state.roundDurationMs,
