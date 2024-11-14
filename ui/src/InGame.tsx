@@ -10,7 +10,6 @@ import { Spinner } from "./Spinner";
 import { roundDurationMs } from "../../common/util";
 import { checkMotionAvailability } from "./util/checkMotionAvailability";
 import { vote } from "./util/vote";
-import { BodiBackground } from "./BodiBackground";
 import { BodiInterspersed } from "./BodiInterspersed";
 
 export function InGame() {
@@ -281,7 +280,7 @@ export function InGame() {
             )}
           </div>
           {isWaitingForOtherTeamsToAnswer && (
-            <div className="mt-auto bg-black/50 p-4 rounded backdrop-blur-lg relative z-10 grid gap-4">
+            <div className="mt-auto relative z-10 grid gap-4">
               <Spinner>
                 <p className="text-xl">
                   Answer submitted:{" "}
@@ -299,7 +298,6 @@ export function InGame() {
           )}
         </>
       )}
-      <BodiBackground />
     </TeamRoomWrapper>
   );
 }
