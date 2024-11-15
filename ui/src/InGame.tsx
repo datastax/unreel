@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useParty } from "./PartyContext";
 
@@ -10,12 +10,13 @@ import { Spinner } from "./Spinner";
 import { checkMotionAvailability } from "./util/checkMotionAvailability";
 import { vote } from "./util/vote";
 import { BodiInterspersed } from "./BodiInterspersed";
+import { defaultGameOptions } from "../../common/util";
 
 export function InGame() {
   const { teamId, room } = useParams();
   const navigate = useNavigate();
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [gameOptions, setGameOptions] = useState<GameOptions | null>(null);
+  const gameOptions = useRef<GameOptions>(defaultGameOptions);
   const [orientation, setOrientation] = useState<"up" | "down" | null>(null);
   const { ws } = useParty();
 
@@ -29,7 +30,7 @@ export function InGame() {
         return navigate("/");
       }
       setGameState(data.state);
-      setGameOptions(data.options);
+      gameOptions.current = data.options;
     };
     ws.addEventListener("message", sync);
     return () => ws.removeEventListener("message", sync);
@@ -90,7 +91,7 @@ export function InGame() {
     }
   }, [gameState, navigate, teamId]);
 
-  if (!(gameState && gameOptions)) {
+  if (!gameState) {
     return (
       <TeamRoomWrapper>
         <Spinner>Loading...</Spinner>
@@ -223,7 +224,7 @@ export function InGame() {
   return (
     <TeamRoomWrapper>
       <CountdownCircle
-        timeout={gameOptions.roundDurationMs}
+        timeout={gameOptions.current.roundDurationMs}
         remainingTime={gameState.timeRemaining}
       />
       {gameState.quotes[gameState.currentQuoteIndex] && (
