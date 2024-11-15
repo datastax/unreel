@@ -45,6 +45,7 @@ export const vote = ({ choice, gameState, meIndex, teamId, ws }: VoteProps) =>
 
     const handleEvent = (event: MessageEvent) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
+      if (data.type !== "state") return;
       if (confirmNewPosition(lastOrientation, data.state, teamId, ws)) {
         resolve(true);
         ws.removeEventListener("message", handleEvent);
