@@ -24,9 +24,10 @@ export function LeaderboardInGame({
   const teamWithBiggestNewScore = activeTeams
     .map((team) => ({
       ...team,
-      scoreDelta: team.previousRoundScore - team.score,
+      scoreDelta: team.score - team.previousRoundScore,
     }))
-    .sort((a, b) => a.scoreDelta - b.scoreDelta)[0];
+    .sort((a, b) => b.scoreDelta - a.scoreDelta)[0];
+
   const teamWithBiggestScore = [...activeTeams].sort(
     (a, b) => b.score - a.score
   )[0];
@@ -35,7 +36,7 @@ export function LeaderboardInGame({
     <LeaderboardLayout>
       <div className={`flex gap-8 items-start w-full`}>
         <div className="w-full grid gap-8">
-          {isRoundDecided && (
+          {isRoundDecided && teamWithBiggestNewScore.scoreDelta > 0 && (
             <h2 className="text-6xl font-bold">
               Team {teamWithBiggestNewScore.id} won!
             </h2>
