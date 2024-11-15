@@ -26,85 +26,80 @@ export function Admin() {
 
   return (
     <main className="p-4 grid md:py-20 max-w-screen-md mx-auto gap-4 min-h-svh content-start w-svw">
-      <h1 className="md:text-6xl text-4xl font-bold">Game Management</h1>
+      <h1 className="md:text-6xl text-4xl font-bold">Create a Room</h1>
       <div className="grid gap-8 content-start">
-        <p>
-          Welcome to the <strong>Unreel</strong> admin. Get ready to have fun.
+        <p className="text-xl">
+          You can use this interface to create custom rooms with specific
+          settings to fully tailor a game's experience.
         </p>
-        <div className="grid gap-4">
+        <div className="grid gap-8">
           <form
+            className="grid gap-4"
             onSubmit={async (e) => {
               e.preventDefault();
               await createRoom();
             }}
           >
-            <p className="grid mb-2">Choose backend:</p>
-            <div className="flex items-center gap-2 mb-4">
-              {backends.map((backend) => (
-                <div
-                  className="flex gap-4 items-center flex-grow"
-                  key={backend}
-                >
-                  <label htmlFor={backend} className="gap-1">
-                    {backend}
-                  </label>
-                  <input
-                    checked={state.backend === backend}
-                    onChange={() => setState((s) => ({ ...s, backend }))}
-                    type="radio"
-                    name="backend"
-                    value={backend}
-                    id={backend}
-                    className="w-8 h-8"
-                  />
-                </div>
-              ))}
+            <div className="flex flex-col gap-2">
+              <p>Choose Your Backend</p>
+              <div className="flex flex-col items-start gap-2">
+                {backends.map((backend) => (
+                  <div key={backend}>
+                    <label className="flex items-center gap-2">
+                      <input
+                        checked={state.backend === backend}
+                        onChange={() => setState((s) => ({ ...s, backend }))}
+                        type="radio"
+                        name="backend"
+                        value={backend}
+                        className="w-8 h-8"
+                      />
+                      {backend}
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-2 mb-4">
-              <label htmlFor="numberOfQuestions" className="gap-1">
-                Number of questions:
+            <div className="flex gap-4">
+              <label className="flex flex-col gap-2">
+                Number of Questions
+                <input
+                  onChange={(e) =>
+                    setState((s) => ({
+                      ...s,
+                      numberOfQuestions: parseInt(e.target.value, 10),
+                    }))
+                  }
+                  className="rounded grow bg-neutral-900 border border-neutral-700 px-4 py-2"
+                  type="number"
+                  name="numberOfQuestions"
+                  value={state.numberOfQuestions}
+                />
               </label>
-              <input
-                onChange={(e) =>
-                  setState((s) => ({
-                    ...s,
-                    numberOfQuestions: parseInt(e.target.value, 10),
-                  }))
-                }
-                id="numberOfQuestions"
-                className="rounded grow bg-neutral-900 border border-neutral-700 px-4 py-2"
-                type="number"
-                name="numberOfQuestions"
-                value={state.numberOfQuestions}
-              />
-            </div>
-
-            <div className="flex items-center gap-2 mb-4">
-              <label htmlFor="roundDurationMs" className="gap-1">
-                Round duration in seconds:
+              <label htmlFor="roundDurationMs" className="flex flex-col gap-2">
+                Round Duration (seconds)
+                <input
+                  onChange={(e) =>
+                    setState((s) => ({
+                      ...s,
+                      roundDurationMs: parseFloat(e.target.value) * 1000,
+                    }))
+                  }
+                  id="roundDurationMs"
+                  className="rounded grow bg-neutral-900 border border-neutral-700 px-4 py-2"
+                  type="number"
+                  name="roundDurationMs"
+                  value={state.roundDurationMs / 1000}
+                />
               </label>
-              <input
-                onChange={(e) =>
-                  setState((s) => ({
-                    ...s,
-                    roundDurationMs: parseInt(e.target.value, 10) * 1000,
-                  }))
-                }
-                id="roundDurationMs"
-                className="rounded grow bg-neutral-900 border border-neutral-700 px-4 py-2"
-                type="number"
-                name="roundDurationMs"
-                value={state.roundDurationMs / 1000}
-              />
             </div>
-
             <div className="flex">
               <button
                 disabled={state.isCreatingRoom}
                 className="w-full bg-white disabled:cursor-not-allowed disabled:opacity-50 text-black px-4 py-2 text-center rounded font-bold"
                 type="submit"
               >
-                {state.isCreatingRoom ? "Creating Room..." : "Create a Room"}
+                {state.isCreatingRoom ? "Creating Room..." : "Create Room"}
               </button>
             </div>
           </form>
@@ -117,7 +112,7 @@ export function Admin() {
             className="grid gap-2"
           >
             <label htmlFor="roomCode" className="grid gap-1">
-              Join admin for room:
+              Join Admin Area for Room
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -134,7 +129,7 @@ export function Admin() {
                 className="bg-white disabled:opacity-50 disabled:cursor-not-allowed grow-0 text-black px-2 md:px-4 py-2 text-center rounded font-bold"
                 type="submit"
               >
-                Join Game
+                Join
               </button>
             </div>
           </form>
