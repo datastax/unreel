@@ -81,20 +81,20 @@ export function Admin() {
 
             <div className="flex items-center gap-2 mb-4">
               <label htmlFor="roundDurationMs" className="gap-1">
-                Round duration in ms:
+                Round duration in seconds:
               </label>
               <input
                 onChange={(e) =>
                   setState((s) => ({
                     ...s,
-                    roundDurationMs: parseInt(e.target.value, 10),
+                    roundDurationMs: parseInt(e.target.value, 10) * 1000,
                   }))
                 }
                 id="roundDurationMs"
                 className="rounded grow bg-neutral-900 border border-neutral-700 px-4 py-2"
                 type="number"
                 name="roundDurationMs"
-                value={state.roundDurationMs}
+                value={state.roundDurationMs / 1000}
               />
             </div>
 

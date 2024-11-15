@@ -11,7 +11,7 @@ export const AdminOptions: React.FC<AdminOptionsProps> = ({ options }) => {
       <dl className="border border-neutral-800 p-4 rounded grid grid-cols-[max-content_auto] gap-y-2 gap-x-4">
         <dt className="text-right">Round duration:</dt>
         <dd>
-          <strong>{options.roundDurationMs}ms</strong>
+          <strong>{options.roundDurationMs / 1000}s</strong>
         </dd>
         <dt className="text-right">Number of Questions:</dt>{" "}
         <dd>
