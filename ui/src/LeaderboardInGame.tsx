@@ -1,6 +1,7 @@
 import { Team } from "../../common/types";
 
 import { Quote } from "../../common/types";
+import { Crown } from "./Crown";
 import { LeaderboardCountdown } from "./LeaderboardCountdown";
 import { LeaderboardLayout } from "./LeaderboardLayout";
 import { PhoneIcon } from "./PhoneIcon";
@@ -36,10 +37,15 @@ export function LeaderboardInGame({
     <LeaderboardLayout>
       <div className={`flex gap-8 items-start w-full`}>
         <div className="w-full grid gap-8">
-          {isRoundDecided && teamWithBiggestNewScore.scoreDelta > 0 && (
-            <h2 className="text-6xl font-bold">
+          {isRoundDecided && teamWithBiggestNewScore.scoreDelta > 0 ? (
+            <h2 className="text-6xl flex items-center gap-4 font-bold">
+              <div className="w-16 text-ds-quaternary h-16">
+                <Crown color="currentColor" />
+              </div>
               Team {teamWithBiggestNewScore.id} won!
             </h2>
+          ) : (
+            <h2 className="text-6xl font-bold">😢 Nobody won!</h2>
           )}
           <div className="grid gap-4 content-start text-left">
             <p className="text-2xl">This quote:</p>
