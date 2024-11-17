@@ -20,6 +20,12 @@ export const getQuotesFromAstra = async (numberOfQuestions: number) => {
 
 const getQuotesFromLangflow = async (numberOfQuestions: number) => {
   let response: any;
+  const langflowOptions = JSON.stringify({
+    input_value: numberOfQuestions,
+    output_type: "chat",
+    input_type: "chat",
+    tweaks: {},
+  });
   try {
     // First try render
     response = await fetch(process.env.LANGFLOW_FALLBACK_API_URL!, {
@@ -27,12 +33,7 @@ const getQuotesFromLangflow = async (numberOfQuestions: number) => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        input_value: numberOfQuestions,
-        output_type: "chat",
-        input_type: "chat",
-        tweaks: {},
-      }),
+      body: langflowOptions,
     }).then((r) => r.json());
   } catch (e) {
     // If it fails, try DS Langflow
@@ -43,12 +44,7 @@ const getQuotesFromLangflow = async (numberOfQuestions: number) => {
         Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        input_value: numberOfQuestions,
-        output_type: "chat",
-        input_type: "chat",
-        tweaks: {},
-      }),
+      body: langflowOptions,
     }).then((res) => {
       if (!res.ok) {
         throw new Error(`Langflow API returned ${res.status}`);
