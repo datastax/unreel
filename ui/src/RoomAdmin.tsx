@@ -8,6 +8,7 @@ import { AdminTeams } from "./AdminTeams";
 import { AdminPlayers } from "./AdminPlayers";
 import { WebSocketResponse } from "../../common/events";
 import { AdminOptions } from "./AdminOptions";
+import { defaultGameOptions } from "../../common/util";
 
 export function RoomAdmin() {
   const { room } = useParams();
@@ -23,7 +24,7 @@ export function RoomAdmin() {
   const [teams, setTeams] = useState<Record<string, Team>>({});
   const [teamAnswers, setTeamAnswers] = useState<Record<string, number>[]>([]);
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
-  const [options, setOptions] = useState<GameOptions | null>(null);
+  const gameOptions = useRef<GameOptions>(defaultGameOptions);
   const [allQuotes, setAllQuotes] = useState<Quote[]>([]);
   const { ws } = useParty();
   const quotesContainerRef = useRef<HTMLDivElement>(null);
@@ -38,7 +39,7 @@ export function RoomAdmin() {
       if (data.type === "reset") {
         return navigate("/admin");
       }
-      setOptions(() => data.options);
+      gameOptions.current = data.options;
       setTeams(() => data.state.teams);
       setAllQuotes(() => data.state.quotes);
       setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
@@ -115,7 +116,7 @@ export function RoomAdmin() {
         teams={teams}
       />
 
-      {options && <AdminOptions options={options} />}
+      <AdminOptions options={gameOptions.current} />
     </div>
   );
 }
