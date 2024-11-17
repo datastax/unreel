@@ -27,15 +27,13 @@ export function GameOver() {
     ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      if (data.type === "state") {
-        if (!data.state.isGameStarted) {
-          navigate(`/${room}`);
-          return;
-        }
-        setTeams(data.state.teams);
-      } else {
-        navigate("/");
+      if (data.type === "reset") {
+        return navigate("/");
       }
+      if (!data.state.isGameStarted) {
+        return navigate(`/${room}`);
+      }
+      setTeams(data.state.teams);
     };
   }, [ws, navigate, room]);
 

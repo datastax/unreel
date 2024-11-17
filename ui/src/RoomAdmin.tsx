@@ -34,17 +34,15 @@ export function RoomAdmin() {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      console.log(data);
-      if (data.type === "state") {
-        setTeams(() => data.state.teams);
-        setAllQuotes(() => data.state.quotes);
-        setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
-        setTeamAnswers(() => data.state.teamAnswers);
-        if (data.state.isGameStarted) {
-          setIsStarting(false);
-        }
-      } else {
-        navigate("/admin");
+      if (data.type === "reset") {
+        return navigate("/admin");
+      }
+      setTeams(() => data.state.teams);
+      setAllQuotes(() => data.state.quotes);
+      setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
+      setTeamAnswers(() => data.state.teamAnswers);
+      if (data.state.isGameStarted) {
+        setIsStarting(false);
       }
     };
   }, [ws]);

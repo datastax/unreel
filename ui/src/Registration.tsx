@@ -59,18 +59,16 @@ export function Registration() {
     ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      if (data.type === "state") {
-        if (data.state.teams[teamId].players.length > maxPlayersPerTeam) {
-          alert("This team is full. Please choose another team.");
-          navigate(`/${room}`);
-          return;
-        }
+      if (data.type === "reset") {
+        return navigate("/");
+      }
+      if (data.state.teams[teamId].players.length > maxPlayersPerTeam) {
+        alert("This team is full. Please choose another team.");
+        return navigate(`/${room}`);
+      }
 
-        if (data.state.isGameStarted) {
-          navigate(`/${room}/game/${teamId}`);
-        }
-      } else {
-        navigate("/");
+      if (data.state.isGameStarted) {
+        navigate(`/${room}/game/${teamId}`);
       }
     };
   }, [ws, teamId, room, state.email]);

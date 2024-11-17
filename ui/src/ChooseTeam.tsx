@@ -25,11 +25,10 @@ export function ChooseTeam() {
     ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
-      if (data.type === "state") {
-        setPlayersByTeam(data.state.teams);
-      } else {
-        navigate("/");
+      if (data.type === "reset") {
+        return navigate("/");
       }
+      setPlayersByTeam(data.state.teams);
     };
   }, [ws]);
 
