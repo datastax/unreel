@@ -1,6 +1,7 @@
 import { Team } from "../../common/types";
 
 import { Quote } from "../../common/types";
+import { Crown } from "./Crown";
 import { LeaderboardCountdown } from "./LeaderboardCountdown";
 import { LeaderboardLayout } from "./LeaderboardLayout";
 import { PhoneIcon } from "./PhoneIcon";
@@ -21,15 +22,31 @@ export function LeaderboardInGame({
   timeRemaining: number;
 }) {
   const correctAnswer = currentQuote.options[currentQuote?.correctOptionIndex];
+  const teamWithBiggestNewScore = activeTeams
+    .map((team) => ({
+      ...team,
+      scoreDelta: team.score - team.previousRoundScore,
+    }))
+    .sort((a, b) => b.scoreDelta - a.scoreDelta)[0];
+
+  const teamWithBiggestScore = [...activeTeams].sort(
+    (a, b) => b.score - a.score
+  )[0];
 
   return (
     <LeaderboardLayout>
-      <div
-        className={`flex gap-8 items-start w-full ${
-          isRoundDecided ? "flex-col-reverse" : "flex-row"
-        }`}
-      >
+      <div className={`flex gap-8 items-start w-full`}>
         <div className="w-full grid gap-8">
+          {isRoundDecided && teamWithBiggestNewScore.scoreDelta > 0 ? (
+            <h2 className="text-6xl flex items-center gap-4 font-bold">
+              <div className="w-16 text-ds-quaternary h-16">
+                <Crown color="currentColor" />
+              </div>
+              Team {teamWithBiggestNewScore.id} won!
+            </h2>
+          ) : (
+            <h2 className="text-6xl font-bold">😢 Nobody won!</h2>
+          )}
           <div className="grid gap-4 content-start text-left">
             <p className="text-2xl">This quote:</p>
             <p className="text-4xl font-bold">
@@ -70,7 +87,9 @@ export function LeaderboardInGame({
                 style={{ viewTransitionName: `team-${team.id}` }}
                 className={`rounded text-center overflow-hidden bg-${
                   teamBgColors[team.id]
-                } bg-opacity-35 grid gap-2 text-3xl font-bold relative h-24 p-4`}
+                } bg-opacity-35 grid gap-2 text-3xl font-bold relative ${
+                  team.id === teamWithBiggestScore.id ? "h-32" : "h-16"
+                } p-4`}
               >
                 <div
                   className={`absolute -z-1 h-full top-0 left-0 bg-${
