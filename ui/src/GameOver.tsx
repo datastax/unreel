@@ -28,9 +28,11 @@ export function GameOver() {
     ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
+      if (data.type === "reset") {
+        return navigate("/");
+      }
       if (!data.state.isGameStarted) {
-        navigate(`/${room}`);
-        return;
+        return navigate(`/${room}`);
       }
       setTeams(data.state.teams);
     };

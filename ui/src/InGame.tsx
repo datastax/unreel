@@ -25,6 +25,9 @@ export function InGame() {
     ws.dispatch({ type: "getState" });
     const sync = (event: MessageEvent) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
+      if (data.type === "reset") {
+        return navigate("/");
+      }
       setGameState(data.state);
     };
     ws.addEventListener("message", sync);

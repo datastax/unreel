@@ -21,6 +21,10 @@ export const AdminGameManagement: React.FC<AdminGameManagementProps> = ({
             href={`/${room}/leaderboard`}
             className="md:text-base text-sm border border-white text-white font-bold py-2 px-4 rounded mr-2"
             target="_blank"
+            onClick={(e) => {
+              e.preventDefault();
+              window.open(e.currentTarget.href, "unreel-leaderboard");
+            }}
           >
             Open Leaderboard
           </a>

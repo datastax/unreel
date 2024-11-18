@@ -34,6 +34,9 @@ export function RoomAdmin() {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
+      if (data.type === "reset") {
+        return navigate("/admin");
+      }
       setTeams(() => data.state.teams);
       setAllQuotes(() => data.state.quotes);
       setCurrentQuote(data.state.quotes[data.state.currentQuoteIndex]);
@@ -74,6 +77,7 @@ export function RoomAdmin() {
     if (ws) {
       ws.dispatch({ type: "resetGame" });
     }
+    navigate("/admin");
   };
 
   const totalPlayers = Object.values(teams).reduce(

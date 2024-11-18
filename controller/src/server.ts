@@ -18,17 +18,22 @@ const initialOptions: GameOptions = {
 };
 
 export default class Server implements Party.Server {
-  timeRemainingInterval: NodeJS.Timeout | null = null;
-  roundCheckerInterval: NodeJS.Timeout | null = null;
-  isNextRoundQueued: boolean = false;
-  isGameStartedQueued: boolean = false;
-  state: GameState = Object.assign({}, initialState);
-  gameOptions: GameOptions = Object.assign({}, initialOptions);
+  timeRemainingInterval: NodeJS.Timeout | null;
+  roundCheckerInterval: NodeJS.Timeout | null;
+  isNextRoundQueued: boolean;
+  isGameStartedQueued: boolean;
+  state: GameState;
+  gameOptions: GameOptions;
 
   constructor(readonly room: Party.Room) {
+    this.timeRemainingInterval = null;
     this.roundCheckerInterval = setInterval(() => {
       this.checkRound();
     }, 1000);
+    this.isNextRoundQueued = false;
+    this.isGameStartedQueued = false;
+    this.state = structuredClone(initialState);
+    this.gameOptions = structuredClone(initialOptions);
   }
 
   async onRequest(request: Party.Request) {
@@ -101,7 +106,10 @@ export default class Server implements Party.Server {
             hasMotion: data.hasMotion,
           });
         }
-        this.broadcastToAllClients({ type: "state", state: this.state });
+        this.broadcastToAllClients({
+          type: "state",
+          state: this.state,
+        });
         return;
       case "leaveTeam":
         Object.values(this.state.teams).forEach((team) => {
@@ -109,7 +117,10 @@ export default class Server implements Party.Server {
             (player: Team["players"][number]) => player.id !== data.playerId
           );
         });
-        this.broadcastToAllClients({ type: "state", state: this.state });
+        this.broadcastToAllClients({
+          type: "state",
+          state: this.state,
+        });
         return;
       case "startGame":
         if (this.isGameStartedQueued) {
@@ -232,17 +243,16 @@ export default class Server implements Party.Server {
         return;
       case "resetGame":
         clearInterval(this.timeRemainingInterval!);
-        this.state = Object.assign({}, initialState);
-        this.state.teamAnswers = [];
-        this.state.quotes = [];
-        this.state.currentQuoteIndex = 0;
-        this.state.teams = {
-          1: { id: "1", score: 0, previousRoundScore: 0, players: [] },
-          2: { id: "2", score: 0, previousRoundScore: 0, players: [] },
-          3: { id: "3", score: 0, previousRoundScore: 0, players: [] },
-          4: { id: "4", score: 0, previousRoundScore: 0, players: [] },
-        };
-        this.broadcastToAllClients({ type: "state", state: this.state });
+        clearInterval(this.roundCheckerInterval!);
+        this.timeRemainingInterval = null;
+        this.roundCheckerInterval = setInterval(() => {
+          this.checkRound();
+        }, 1000);
+        this.isNextRoundQueued = false;
+        this.isGameStartedQueued = false;
+        this.state = structuredClone(initialState);
+        this.gameOptions = structuredClone(initialOptions);
+        this.broadcastToAllClients({ type: "reset" });
         return;
       default:
         console.log("Unknown message type", data);
@@ -256,7 +266,10 @@ export default class Server implements Party.Server {
     if (nextQuoteIndex >= this.state.quotes.length) {
       this.state.gameEndedAt = Date.now();
       this.state.isRoundDecided = true;
-      this.broadcastToAllClients({ type: "state", state: this.state });
+      this.broadcastToAllClients({
+        type: "state",
+        state: this.state,
+      });
       return;
     }
 
@@ -374,7 +387,10 @@ export default class Server implements Party.Server {
       )
     ) {
       this.state.isRoundDecided = true;
-      this.broadcastToAllClients({ type: "state", state: this.state });
+      this.broadcastToAllClients({
+        type: "state",
+        state: this.state,
+      });
     }
   };
 }

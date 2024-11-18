@@ -60,10 +60,12 @@ export function Registration() {
     ws.dispatch({ type: "getState" });
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
+      if (data.type === "reset") {
+        return navigate("/");
+      }
       if (data.state.teams[teamId].players.length > maxPlayersPerTeam) {
         alert("This team is full. Please choose another team.");
-        navigate(`/${room}`);
-        return;
+        return navigate(`/${room}`);
       }
 
       if (data.state.isGameStarted) {
