@@ -29,8 +29,8 @@ export function LeaderboardInGame({
     }))
     .sort((a, b) => b.scoreDelta - a.scoreDelta)[0];
 
-  const teamWithBiggestScore = activeTeams.toSorted(
-    (a: Team, b: Team) => b.score - a.score
+  const teamWithBiggestScore = [...activeTeams].sort(
+    (a, b) => b.score - a.score
   )[0];
 
   return (
