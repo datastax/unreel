@@ -37,7 +37,8 @@ export function RoomAdmin() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
       if (data.type === "reset") {
-        return navigate(`/${room}/admin`);
+        window.location.reload();
+        return;
       }
       gameOptions.current = data.options;
       setTeams(() => data.state.teams);
