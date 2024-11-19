@@ -55,11 +55,15 @@ export function Home() {
               <div className="flex items-center gap-2">
                 <input
                   onChange={(e) =>
-                    setState((s) => ({ ...s, roomCode: e.target.value }))
+                    setState((s) => ({
+                      ...s,
+                      roomCode: e.target.value.toUpperCase(),
+                    }))
                   }
                   id="roomCode"
                   className="rounded grow bg-neutral-900 border border-neutral-700 px-4 py-2"
                   type="text"
+                  value={state.roomCode}
                   name="room"
                 />
                 <button
