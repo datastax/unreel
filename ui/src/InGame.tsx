@@ -20,6 +20,8 @@ export function InGame() {
   const [orientation, setOrientation] = useState<"up" | "down" | null>("up");
   const { ws } = useParty();
 
+  const queryParams = ws?.partySocketOptions.query as Record<string, string>;
+
   // Sync game state
   useEffect(() => {
     if (!ws) return () => {};
@@ -65,6 +67,11 @@ export function InGame() {
     });
   }, []);
 
+  const hasMotion =
+    gameState?.teams[teamId!]?.players.find(
+      (p) => p.email === queryParams.playerId
+    )?.hasMotion ?? false;
+
   useEffect(() => {
     if (!orientation) return;
     if (!gameState) return;
@@ -106,12 +113,6 @@ export function InGame() {
       </TeamRoomWrapper>
     );
   }
-
-  const queryParams = ws.partySocketOptions.query as Record<string, string>;
-  const hasMotion =
-    gameState.teams[teamId].players.find(
-      (p) => p.email === queryParams.playerId
-    )?.hasMotion ?? false;
 
   const meIndex =
     ws && gameState.teams[teamId]
@@ -198,14 +199,7 @@ export function InGame() {
                 "faceUp" && (
                 <div className="grid gap-4">
                   <button
-                    onClick={() =>
-                      ws?.dispatch({
-                        type: "updatePhonePosition",
-                        phonePosition: "faceUp",
-                        playerIndex: meIndex,
-                        teamId,
-                      })
-                    }
+                    onClick={() => setOrientation("up")}
                     className="bg-white text-black p-2 rounded-md"
                   >
                     Ready Up
@@ -272,18 +266,14 @@ export function InGame() {
             ) : (
               <div className="grid gap-4">
                 <button
-                  onClick={() =>
-                    vote({ choice: "up", gameState, meIndex, teamId, ws })
-                  }
+                  onClick={() => setOrientation("up")}
                   disabled={orientation === "up"}
                   className={`bg-white disabled:opacity-50 text-black p-2 rounded-md`}
                 >
                   True
                 </button>
                 <button
-                  onClick={() =>
-                    vote({ choice: "down", gameState, meIndex, teamId, ws })
-                  }
+                  onClick={() => setOrientation("down")}
                   disabled={orientation === "down"}
                   className={`bg-white disabled:opacity-50 text-black p-2 rounded-md`}
                 >
