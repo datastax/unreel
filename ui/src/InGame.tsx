@@ -17,7 +17,7 @@ export function InGame() {
   const navigate = useNavigate();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const gameOptions = useRef<GameOptions>(defaultGameOptions);
-  const [orientation, setOrientation] = useState<"up" | "down" | null>(null);
+  const [orientation, setOrientation] = useState<"up" | "down" | null>("up");
   const { ws } = useParty();
 
   // Sync game state
@@ -254,27 +254,7 @@ export function InGame() {
                 </h1>
               </div>
             )}
-            {!hasMotion && (
-              <div className="grid gap-4">
-                <button
-                  onClick={() =>
-                    vote({ choice: "up", gameState, meIndex, teamId, ws })
-                  }
-                  className="bg-white text-black p-2 rounded-md"
-                >
-                  True
-                </button>
-                <button
-                  onClick={() =>
-                    vote({ choice: "down", gameState, meIndex, teamId, ws })
-                  }
-                  className="bg-white text-black p-2 rounded-md"
-                >
-                  False
-                </button>
-              </div>
-            )}
-            {hasMotion && (
+            {hasMotion ? (
               <div className="grid gap-4">
                 <p className="text-xl font-bold">How to Play</p>
                 <ul className="grid list-disc mx-4 gap-1">
@@ -286,6 +266,27 @@ export function InGame() {
                     If <strong>correct</strong>, leave your phone face up.
                   </li>
                 </ul>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                <button
+                  onClick={() =>
+                    vote({ choice: "up", gameState, meIndex, teamId, ws })
+                  }
+                  disabled={orientation === "up"}
+                  className={`bg-white disabled:opacity-50 text-black p-2 rounded-md`}
+                >
+                  True
+                </button>
+                <button
+                  onClick={() =>
+                    vote({ choice: "down", gameState, meIndex, teamId, ws })
+                  }
+                  disabled={orientation === "down"}
+                  className={`bg-white disabled:opacity-50 text-black p-2 rounded-md`}
+                >
+                  False
+                </button>
               </div>
             )}
           </div>
