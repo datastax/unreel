@@ -20,6 +20,8 @@ export function InGame() {
   const [orientation, setOrientation] = useState<"up" | "down" | null>("up");
   const { ws } = useParty();
 
+  const queryParams = ws?.partySocketOptions.query as Record<string, string>;
+
   // Sync game state
   useEffect(() => {
     if (!ws) return () => {};
@@ -65,14 +67,20 @@ export function InGame() {
     });
   }, []);
 
+  const hasMotion =
+    gameState?.teams[teamId!]?.players.find(
+      (p) => p.email === queryParams.playerId
+    )?.hasMotion ?? false;
+
   useEffect(() => {
+    if (!hasMotion) return;
     if (!orientation) return;
     if (!gameState) return;
     if (!teamId) return;
     if (!ws) return;
 
     vote({ choice: orientation, gameState, meIndex, teamId, ws });
-  }, [orientation, gameState, teamId, ws]);
+  }, [orientation, hasMotion, gameState, teamId, ws]);
 
   useEffect(() => {
     if (!teamId) {
@@ -106,12 +114,6 @@ export function InGame() {
       </TeamRoomWrapper>
     );
   }
-
-  const queryParams = ws.partySocketOptions.query as Record<string, string>;
-  const hasMotion =
-    gameState.teams[teamId].players.find(
-      (p) => p.email === queryParams.playerId
-    )?.hasMotion ?? false;
 
   const meIndex =
     ws && gameState.teams[teamId]
