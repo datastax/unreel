@@ -7,8 +7,8 @@ import { AdminGameManagement } from "./AdminGameManagement";
 import { AdminTeams } from "./AdminTeams";
 import { AdminPlayers } from "./AdminPlayers";
 import { WebSocketResponse } from "../../common/events";
-import { AdminOptions } from "./AdminOptions";
 import { defaultGameOptions } from "../../common/util";
+import { AdminOptions } from "./AdminOptions";
 
 export function RoomAdmin() {
   const { room } = useParams();
@@ -90,33 +90,34 @@ export function RoomAdmin() {
 
   return (
     <div className="md:p-8 p-4 grid gap-8">
-      <AdminGameManagement
-        totalPlayers={totalPlayers}
-        room={room!}
-        handleSendNextQuote={handleSendNextQuote}
-        handleResetGame={handleResetGame}
-      />
-
+      <div className="grid gap-4">
+        <h1 className="md:text-6xl text-4xl font-bold">
+          Room <span className="text-ds-quaternary">{room}</span>
+        </h1>
+        <AdminOptions options={gameOptions.current} />
+        <AdminGameManagement
+          totalPlayers={totalPlayers}
+          room={room!}
+          handleSendNextQuote={handleSendNextQuote}
+          handleResetGame={handleResetGame}
+        />
+      </div>
       <AdminQuotes
         currentQuote={currentQuote}
         allQuotes={allQuotes}
         handleStartGame={handleStartGame}
         isStarting={isStarting}
       />
-
       <AdminTeams
         teams={teams}
         allQuotes={allQuotes}
         teamAnswers={teamAnswers}
       />
-
       <AdminPlayers
         allQuotes={allQuotes}
         totalPlayers={totalPlayers}
         teams={teams}
       />
-
-      <AdminOptions options={gameOptions.current} />
     </div>
   );
 }

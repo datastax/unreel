@@ -13,7 +13,6 @@ export const AdminGameManagement: React.FC<AdminGameManagementProps> = ({
 }) => {
   return (
     <>
-      <h1 className="md:text-6xl text-4xl font-bold">Game Management</h1>
       <fieldset className="border flex flex-col md:flex-row items-center gap-2 justify-between rounded p-4 border-neutral-800">
         <div className="text-lg">{totalPlayers} players connected.</div>
         <div className="flex items-center gap-2">
