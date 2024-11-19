@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { DataStax } from "./DataStax";
 import { useState } from "react";
-import { generateRoomId } from "./util/generateRoomId";
 import { BodiBackground } from "./BodiBackground";
+import { generateRoom } from "./util/generateRoom";
 
 type State = {
   isCreatingRoom: boolean;
@@ -18,7 +18,7 @@ export function Home() {
 
   const createRoom = async () => {
     setState((s) => ({ ...s, isCreatingRoom: true }));
-    const roomId = await generateRoomId();
+    const roomId = await generateRoom();
     navigate(`/${roomId}`);
   };
 

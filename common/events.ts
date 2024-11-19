@@ -1,4 +1,4 @@
-import type { GameState } from "./types";
+import type { GameState, GameOptions } from "./types";
 
 export type WebSocketAction =
   | { type: "getState" }
@@ -18,5 +18,9 @@ export type WebSocketAction =
   | { type: "resetGame" };
 
 export type WebSocketResponse =
-  | { type: "state"; state: GameState }
+  | {
+      type: "state";
+      state: GameState;
+      options: GameOptions;
+    }
   | { type: "reset" };

@@ -1,23 +1,31 @@
-import { fallbackQuotes, backends } from "../../../common/util";
+import { fallbackQuotes, defaultGameOptions } from "../../../common/util";
 import { shuffle } from "./shuffle";
 import { miniAstra } from "./miniAstra";
+import type { BackendOptions } from "../../../common/types";
 
 export const getQuotes = async (
-  backend: (typeof backends)[number] = backends[0]
+  numberOfQuestions: number = defaultGameOptions.numberOfQuestions,
+  backend: BackendOptions = defaultGameOptions.backend
 ) => {
   if (backend === "Langflow") {
-    return await getQuotesFromLangflow();
+    return await getQuotesFromLangflow(numberOfQuestions);
   }
-  return await getQuotesFromAstra();
+  return await getQuotesFromAstra(numberOfQuestions);
 };
 
-export const getQuotesFromAstra = async () => {
+export const getQuotesFromAstra = async (numberOfQuestions: number) => {
   const questions = await miniAstra.findFromCollection("questions");
-  return shuffle(questions).slice(0, 10);
+  return shuffle(questions).slice(0, numberOfQuestions);
 };
 
-const getQuotesFromLangflow = async () => {
+const getQuotesFromLangflow = async (numberOfQuestions: number) => {
   let response: any;
+  const langflowOptions = JSON.stringify({
+    input_value: numberOfQuestions,
+    output_type: "chat",
+    input_type: "chat",
+    tweaks: {},
+  });
   try {
     // First try render
     response = await fetch(process.env.LANGFLOW_FALLBACK_API_URL!, {
@@ -25,12 +33,7 @@ const getQuotesFromLangflow = async () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        input_value: "10",
-        output_type: "chat",
-        input_type: "chat",
-        tweaks: {},
-      }),
+      body: langflowOptions,
     }).then((r) => r.json());
   } catch (e) {
     // If it fails, try DS Langflow
@@ -41,12 +44,7 @@ const getQuotesFromLangflow = async () => {
         Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        input_value: "10",
-        output_type: "chat",
-        input_type: "chat",
-        tweaks: {},
-      }),
+      body: langflowOptions,
     }).then((res) => {
       if (!res.ok) {
         throw new Error(`Langflow API returned ${res.status}`);
