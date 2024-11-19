@@ -107,14 +107,16 @@ export function InGame() {
     );
   }
 
+  const queryParams = ws.partySocketOptions.query as Record<string, string>;
   const hasMotion =
-    gameState.teams[teamId].players.find((p) => p.email === ws.id)?.hasMotion ??
-    false;
+    gameState.teams[teamId].players.find(
+      (p) => p.email === queryParams.playerId
+    )?.hasMotion ?? false;
 
   const meIndex =
     ws && gameState.teams[teamId]
       ? gameState.teams[teamId!].players.findIndex(
-          (p: { email: string }) => p.email === ws.id
+          (p: { email: string }) => p.email === queryParams.playerId
         )
       : -1;
 

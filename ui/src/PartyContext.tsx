@@ -20,7 +20,8 @@ export const PartyProvider = ({ children, room }: Props) => {
   let email = "";
 
   try {
-    email = localStorage.getItem("email") || "";
+    email =
+      sessionStorage.getItem("email") || localStorage.getItem("email") || "";
   } catch {
     // eslint-disable-next-line no-empty
   }
@@ -28,8 +29,7 @@ export const PartyProvider = ({ children, room }: Props) => {
   const ws = usePartySocket({
     host: import.meta.env.VITE_PARTYKIT_HOST,
     room,
-    ...(email && { id: email }),
-    protocol: "wss",
+    query: { playerId: email },
     onError: () => {
       setError(true);
     },

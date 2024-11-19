@@ -16,8 +16,10 @@ export const vote = ({ choice, gameState, meIndex, teamId, ws }: VoteProps) =>
     if (!gameState) return;
     if (!teamId) return;
 
+    const queryParams = ws.partySocketOptions.query as Record<string, string>;
+
     const me = gameState.teams[teamId].players.find(
-      (p: { email: string }) => p.email === ws.id
+      (p: { email: string }) => p.email === queryParams.playerId
     );
 
     if (!me) return;
@@ -40,7 +42,7 @@ export const vote = ({ choice, gameState, meIndex, teamId, ws }: VoteProps) =>
     ws.dispatch({
       type: choice === "up" ? "acceptOption" : "rejectOption",
       teamId: teamId,
-      playerId: ws.id,
+      playerId: queryParams.playerId ?? "",
     });
 
     const handleEvent = (event: MessageEvent) => {
@@ -61,8 +63,9 @@ const confirmNewPosition = (
   teamId: string,
   ws: TypeSafePartySocket
 ) => {
+  const queryParams = ws.partySocketOptions.query as Record<string, string>;
   const me = state.teams[teamId].players.find(
-    (p: { email: string }) => p.email === ws.id
+    (p: { email: string }) => p.email === queryParams.playerId
   );
   if (!me) return;
 

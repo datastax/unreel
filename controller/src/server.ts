@@ -100,9 +100,12 @@ export default class Server implements Party.Server {
         );
         return;
       case "joinTeam":
+        const queryParams = new URL(sender.uri).searchParams;
         const existingPlayerIndex = this.state.teams[
           data.teamId
-        ].players.findIndex((player) => player.email === data.email);
+        ].players.findIndex(
+          (player) => player.email === queryParams.get("playerId")
+        );
         if (existingPlayerIndex !== -1) {
           // Update existing player's id if they reconnect
           this.state.teams[data.teamId].players[existingPlayerIndex].id =
@@ -116,6 +119,11 @@ export default class Server implements Party.Server {
             choices: {},
             hasMotion: data.hasMotion,
           });
+
+          // Make sure players are unique by email
+          this.state.teams[data.teamId].players = [
+            ...new Set(this.state.teams[data.teamId].players),
+          ];
         }
         this.broadcastToAllClients({
           type: "state",
@@ -126,7 +134,7 @@ export default class Server implements Party.Server {
       case "leaveTeam":
         Object.values(this.state.teams).forEach((team) => {
           team.players = team.players.filter(
-            (player: Team["players"][number]) => player.id !== data.playerId
+            (player: Team["players"][number]) => player.email !== data.playerId
           );
         });
         this.broadcastToAllClients({
@@ -167,7 +175,7 @@ export default class Server implements Party.Server {
       case "acceptOption":
         // Identify the player
         const playerIndex = this.state.teams[data.teamId].players.findIndex(
-          (player) => player.id === data.playerId
+          (player) => player.email === data.playerId
         );
 
         const player = this.state.teams[data.teamId].players[playerIndex];
