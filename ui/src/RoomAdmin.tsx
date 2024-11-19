@@ -80,7 +80,7 @@ export function RoomAdmin() {
     if (ws) {
       ws.dispatch({ type: "resetGame" });
     }
-    navigate("/admin");
+    navigate(`/${room}/admin`);
   };
 
   const totalPlayers = Object.values(teams).reduce(
