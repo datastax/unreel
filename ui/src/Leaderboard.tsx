@@ -38,6 +38,10 @@ export function Leaderboard() {
       const data = JSON.parse(event.data) as WebSocketResponse;
       if (data.type === "state") {
         transitionViewIfSupported(() => setState(data.state));
+        return;
+      }
+      if (data.type === "reset") {
+        window.location.reload();
       }
     };
   }, [ws, setState]);
