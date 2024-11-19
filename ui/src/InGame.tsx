@@ -29,7 +29,7 @@ export function InGame() {
     const sync = (event: MessageEvent) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
       if (data.type === "reset") {
-        return navigate("/");
+        return navigate(`/${room}`);
       }
       setGameState(data.state);
       gameOptions.current = data.options;

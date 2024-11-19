@@ -24,7 +24,7 @@ export function TeamRoom() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
       if (data.type === "reset") {
-        return navigate("/");
+        return navigate(`/${room}`);
       }
       if (data.state.teams[teamId].players.length > maxPlayersPerTeam) {
         alert("Sorry, your team just got too big! Try again!");

@@ -29,7 +29,7 @@ export function GameOver() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
       if (data.type === "reset") {
-        return navigate("/");
+        return navigate(`/${room}`);
       }
       if (!data.state.isGameStarted) {
         return navigate(`/${room}`);

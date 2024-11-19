@@ -30,7 +30,7 @@ export function ChooseTeam() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data) as WebSocketResponse;
       if (data.type === "reset") {
-        return navigate("/");
+        return navigate(`/${room}`);
       }
       setPlayersByTeam(data.state.teams);
     };
