@@ -77,10 +77,8 @@ export function RoomAdmin() {
   };
 
   const handleResetGame = () => {
-    if (ws) {
-      ws.dispatch({ type: "resetGame" });
-    }
-    navigate(`/${room}/admin`);
+    if (!ws) return;
+    ws.dispatch({ type: "resetGame" });
   };
 
   const totalPlayers = Object.values(teams).reduce(
