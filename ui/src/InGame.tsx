@@ -73,14 +73,13 @@ export function InGame() {
     )?.hasMotion ?? false;
 
   useEffect(() => {
-    if (!hasMotion) return;
     if (!orientation) return;
     if (!gameState) return;
     if (!teamId) return;
     if (!ws) return;
 
     vote({ choice: orientation, gameState, meIndex, teamId, ws });
-  }, [orientation, hasMotion, gameState, teamId, ws]);
+  }, [orientation, gameState, teamId, ws]);
 
   useEffect(() => {
     if (!teamId) {
@@ -200,14 +199,7 @@ export function InGame() {
                 "faceUp" && (
                 <div className="grid gap-4">
                   <button
-                    onClick={() =>
-                      ws?.dispatch({
-                        type: "updatePhonePosition",
-                        phonePosition: "faceUp",
-                        playerIndex: meIndex,
-                        teamId,
-                      })
-                    }
+                    onClick={() => setOrientation("up")}
                     className="bg-white text-black p-2 rounded-md"
                   >
                     Ready Up
@@ -274,18 +266,14 @@ export function InGame() {
             ) : (
               <div className="grid gap-4">
                 <button
-                  onClick={() =>
-                    vote({ choice: "up", gameState, meIndex, teamId, ws })
-                  }
+                  onClick={() => setOrientation("up")}
                   disabled={orientation === "up"}
                   className={`bg-white disabled:opacity-50 text-black p-2 rounded-md`}
                 >
                   True
                 </button>
                 <button
-                  onClick={() =>
-                    vote({ choice: "down", gameState, meIndex, teamId, ws })
-                  }
+                  onClick={() => setOrientation("down")}
                   disabled={orientation === "down"}
                   className={`bg-white disabled:opacity-50 text-black p-2 rounded-md`}
                 >
