@@ -86,19 +86,20 @@ export function Registration() {
     if (!ws) return;
     const hasMotion = await requestPermission();
     try {
+      sessionStorage.setItem("email", state.email);
       localStorage.setItem("email", state.email);
       // eslint-disable-next-line no-empty
     } catch {}
-    ws.updateProperties({ id: state.email });
+    ws.updateProperties({ query: { playerId: state.email } });
     ws.reconnect();
-    ws.dispatch({ type: "joinTeam", teamId, email: ws.id, hasMotion });
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    ws.dispatch({ type: "joinTeam", teamId, email: state.email, hasMotion });
     navigate(`/${room}/team/${teamId}`);
   };
 
   useEffect(() => {
     try {
-      const email = localStorage.getItem("email");
+      const email =
+        sessionStorage.getItem("email") || localStorage.getItem("email");
       if (email) {
         setState((state) => ({ ...state, email }));
       }

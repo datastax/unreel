@@ -46,18 +46,21 @@ export function TeamRoom() {
 
     if (!gameState) return;
 
-    const isPlayerInTeam = gameState.teams[teamId].players.find(
-      (p) => p.email === ws.id
-    );
+    const queryParams = ws.partySocketOptions.query as Record<string, string>;
+    const isPlayerInTeam = gameState.teams[teamId].players.find((p) => {
+      return p.email === queryParams.playerId;
+    });
 
     if (!isPlayerInTeam) {
       navigate(`/${room}`);
     }
   }, [ws, teamId, room, gameState]);
 
+  const queryParams = ws?.partySocketOptions.query as Record<string, string>;
   const currentPlayerCount = gameState?.teams[teamId!].players.length;
   const isFirstPlayer =
-    gameState?.teams[teamId!].players?.[0]?.email === ws?.id;
+    gameState?.teams[teamId!].players?.[0]?.email ===
+    decodeURIComponent(queryParams.playerId);
   const gameHasOnlyOneTeamWithPlayers =
     Object.values(gameState?.teams ?? {}).filter(
       (team) => team.players.length > 0

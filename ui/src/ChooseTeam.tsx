@@ -17,7 +17,11 @@ export function ChooseTeam() {
 
   useEffect(() => {
     if (!ws) return;
-    ws.dispatch({ type: "leaveTeam", playerId: ws.id });
+    const queryParams = ws.partySocketOptions.query as Record<string, string>;
+    ws.dispatch({
+      type: "leaveTeam",
+      playerId: queryParams.playerId ?? "",
+    });
   }, [ws]);
 
   useEffect(() => {
