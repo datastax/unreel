@@ -225,6 +225,14 @@ export default class Server implements Party.Server {
               this.state.teamAnswers[this.state.currentQuoteIndex] = {};
             }
 
+            // Skip if team has already answered this round
+            if (
+              this.state.teamAnswers[this.state.currentQuoteIndex][team.id] !==
+              undefined
+            ) {
+              return;
+            }
+
             // Update that team's answer
             this.state.teamAnswers[this.state.currentQuoteIndex][team.id] =
               this.state.quotes[this.state.currentQuoteIndex].options.findIndex(
