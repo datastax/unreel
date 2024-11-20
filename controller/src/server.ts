@@ -184,6 +184,12 @@ export default class Server implements Party.Server {
           return;
         }
 
+        if (
+          player.choices[this.state.currentQuoteIndex]?.status === "rejected"
+        ) {
+          return;
+        }
+
         // Update the player's choice
         player.choices[this.state.currentQuoteIndex] = {
           value:
@@ -223,14 +229,6 @@ export default class Server implements Party.Server {
             // Found team with exactly one accepted choice
             if (!this.state.teamAnswers[this.state.currentQuoteIndex]) {
               this.state.teamAnswers[this.state.currentQuoteIndex] = {};
-            }
-
-            // Skip if team has already answered this round
-            if (
-              this.state.teamAnswers[this.state.currentQuoteIndex][team.id] !==
-              undefined
-            ) {
-              return;
             }
 
             // Update that team's answer
