@@ -21,7 +21,7 @@ export const getQuotesFromAstra = async (numberOfQuestions: number) => {
 const getQuotesFromLangflow = async (numberOfQuestions: number) => {
   let response: any;
   const langflowOptions = JSON.stringify({
-    input_value: numberOfQuestions,
+    input_value: String(numberOfQuestions),
     output_type: "chat",
     input_type: "chat",
     tweaks: {},
